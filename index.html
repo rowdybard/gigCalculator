@@ -6,10 +6,12 @@
   <title>Gig Worker Pay Calculator - Roadie & More</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
   <style>
-    .platform-card { transition: all 0.2s ease; }
-    .platform-card:hover { transform: translateY(-2px); }
-    .platform-card.selected { border-color: #6366f1; background-color: rgba(99, 102, 241, 0.1); }
     .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
     .stat-card { backdrop-filter: blur(10px); }
   </style>
@@ -37,70 +39,7 @@
       <p class="text-slate-400 text-lg">Calculate your true hourly rate after expenses for Roadie, DoorDash, Uber, and more</p>
     </header>
 
-    <!-- Platform Selection -->
-    <section class="bg-slate-800/60 rounded-2xl p-6 ring-1 ring-white/10">
-      <h2 class="text-xl font-semibold mb-4 flex items-center">
-        <i class="fas fa-layer-group mr-2 text-indigo-400"></i>Select Your Platform
-      </h2>
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div class="platform-card selected bg-slate-700/60 rounded-xl p-4 ring-1 ring-white/10 cursor-pointer" data-platform="roadie">
-          <div class="text-center">
-            <i class="fas fa-truck text-2xl text-blue-500 mb-2"></i>
-            <div class="font-semibold">Roadie</div>
-            <div class="text-xs text-slate-400">Delivery & Moving</div>
-          </div>
-        </div>
-        <div class="platform-card bg-slate-700/60 rounded-xl p-4 ring-1 ring-white/10 cursor-pointer" data-platform="doordash">
-          <div class="text-center">
-            <i class="fas fa-utensils text-2xl text-red-500 mb-2"></i>
-            <div class="font-semibold">DoorDash</div>
-            <div class="text-xs text-slate-400">Food Delivery</div>
-          </div>
-        </div>
-        <div class="platform-card bg-slate-700/60 rounded-xl p-4 ring-1 ring-white/10 cursor-pointer" data-platform="uber">
-          <div class="text-center">
-            <i class="fas fa-car text-2xl text-black bg-white rounded-full p-1 mb-2"></i>
-            <div class="font-semibold">Uber</div>
-            <div class="text-xs text-slate-400">Rides & Delivery</div>
-          </div>
-        </div>
-        <div class="platform-card bg-slate-700/60 rounded-xl p-4 ring-1 ring-white/10 cursor-pointer" data-platform="flex">
-          <div class="text-center">
-            <i class="fas fa-box text-2xl text-orange-500 mb-2"></i>
-            <div class="font-semibold">Amazon Flex</div>
-            <div class="text-xs text-slate-400">Package Delivery</div>
-          </div>
-        </div>
-        <div class="platform-card bg-slate-700/60 rounded-xl p-4 ring-1 ring-white/10 cursor-pointer" data-platform="instacart">
-          <div class="text-center">
-            <i class="fas fa-shopping-cart text-2xl text-green-500 mb-2"></i>
-            <div class="font-semibold">Instacart</div>
-            <div class="text-xs text-slate-400">Grocery Delivery</div>
-          </div>
-        </div>
-        <div class="platform-card bg-slate-700/60 rounded-xl p-4 ring-1 ring-white/10 cursor-pointer" data-platform="grubhub">
-          <div class="text-center">
-            <i class="fas fa-hamburger text-2xl text-yellow-500 mb-2"></i>
-            <div class="font-semibold">GrubHub</div>
-            <div class="text-xs text-slate-400">Food Delivery</div>
-          </div>
-        </div>
-        <div class="platform-card bg-slate-700/60 rounded-xl p-4 ring-1 ring-white/10 cursor-pointer" data-platform="lyft">
-          <div class="text-center">
-            <i class="fas fa-car-side text-2xl text-pink-500 mb-2"></i>
-            <div class="font-semibold">Lyft</div>
-            <div class="text-xs text-slate-400">Rideshare</div>
-          </div>
-        </div>
-        <div class="platform-card bg-slate-700/60 rounded-xl p-4 ring-1 ring-white/10 cursor-pointer" data-platform="custom">
-          <div class="text-center">
-            <i class="fas fa-cog text-2xl text-gray-500 mb-2"></i>
-            <div class="font-semibold">Custom</div>
-            <div class="text-xs text-slate-400">Other Platform</div>
-          </div>
-        </div>
-      </div>
-    </section>
+
 
     <!-- Main Calculator -->
     <div class="grid lg:grid-cols-3 gap-6">
@@ -176,6 +115,9 @@
         <div class="flex flex-wrap gap-3">
           <button id="calcBtn" class="px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 font-semibold transition-all">
             <i class="fas fa-calculator mr-2"></i>Calculate
+          </button>
+          <button id="saveBtn" class="px-6 py-3 rounded-xl bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-500 hover:to-orange-500 font-semibold transition-all">
+            <i class="fas fa-save mr-2"></i>Save
           </button>
           <button id="shareBtn" class="px-6 py-3 rounded-xl bg-slate-700 hover:bg-slate-600 ring-1 ring-white/10 font-semibold transition-all">
             <i class="fas fa-share mr-2"></i>Share Link
@@ -263,15 +205,7 @@
           </div>
         </section>
 
-        <!-- Platform Tips -->
-        <section class="bg-slate-800/60 rounded-2xl p-6 ring-1 ring-white/10">
-          <h2 class="text-xl font-semibold mb-4 flex items-center">
-            <i class="fas fa-lightbulb mr-2 text-indigo-400"></i>Platform Tips
-          </h2>
-          <div id="platformTips" class="text-sm text-slate-300 space-y-2">
-            <p><strong>Roadie:</strong> Focus on longer hauls and furniture moves for better pay per mile. Consider vehicle size and insurance requirements.</p>
-          </div>
-        </section>
+
       </div>
     </div>
 
@@ -290,95 +224,10 @@
   </div>
 
   <script>
-    // Platform data with tips and default values
-    const platforms = {
-      roadie: {
-        name: "Roadie",
-        icon: "fas fa-truck",
-        color: "text-blue-500",
-        tips: "Focus on longer hauls and furniture moves for better pay per mile. Consider vehicle size and insurance requirements. Roadie often pays better for larger items and longer distances.",
-        defaults: { wear: 0.67, fees: 0 }
-      },
-      doordash: {
-        name: "DoorDash",
-        icon: "fas fa-utensils",
-        color: "text-red-500",
-        tips: "Peak hours (lunch/dinner) typically pay better. Consider hot spots and restaurant wait times. Tips can significantly impact earnings.",
-        defaults: { wear: 0.65, fees: 0 }
-      },
-      uber: {
-        name: "Uber",
-        icon: "fas fa-car",
-        color: "text-black bg-white rounded-full p-1",
-        tips: "Surge pricing during busy times can dramatically increase earnings. Consider both rides and Uber Eats for maximum income.",
-        defaults: { wear: 0.65, fees: 0 }
-      },
-      flex: {
-        name: "Amazon Flex",
-        icon: "fas fa-box",
-        color: "text-orange-500",
-        tips: "Block scheduling can provide consistent income. Consider warehouse location and delivery area density. Tips are rare but blocks can be profitable.",
-        defaults: { wear: 0.68, fees: 0 }
-      },
-      instacart: {
-        name: "Instacart",
-        icon: "fas fa-shopping-cart",
-        color: "text-green-500",
-        tips: "Large orders and heavy items often pay better. Consider store familiarity and shopping efficiency. Tips are crucial for profitability.",
-        defaults: { wear: 0.65, fees: 0 }
-      },
-      grubhub: {
-        name: "GrubHub",
-        icon: "fas fa-hamburger",
-        color: "text-yellow-500",
-        tips: "Restaurant partnerships can provide consistent orders. Consider delivery radius and restaurant density in your area.",
-        defaults: { wear: 0.65, fees: 0 }
-      },
-      lyft: {
-        name: "Lyft",
-        icon: "fas fa-car-side",
-        color: "text-pink-500",
-        tips: "Peak hours and events can provide surge pricing. Consider both passenger rides and delivery options for maximum earnings.",
-        defaults: { wear: 0.65, fees: 0 }
-      },
-      custom: {
-        name: "Custom Platform",
-        icon: "fas fa-cog",
-        color: "text-gray-500",
-        tips: "Adjust wear & tear and other costs based on your specific platform and vehicle type.",
-        defaults: { wear: 0.65, fees: 0 }
-      }
-    };
 
-    let currentPlatform = 'roadie';
     const fields = ["hours","miles","gross","tips","gas","mpg","wear","fees","tax","onTripMiles"];
 
-    // Platform selection
-    document.querySelectorAll('.platform-card').forEach(card => {
-      card.addEventListener('click', () => {
-        document.querySelectorAll('.platform-card').forEach(c => c.classList.remove('selected'));
-        card.classList.add('selected');
-        currentPlatform = card.dataset.platform;
-        updatePlatformTips();
-        updateDefaults();
-        calc();
-      });
-    });
 
-    function updatePlatformTips() {
-      const tipsDiv = document.getElementById('platformTips');
-      tipsDiv.innerHTML = `<p><strong>${platforms[currentPlatform].name}:</strong> ${platforms[currentPlatform].tips}</p>`;
-    }
-
-    function updateDefaults() {
-      const defaults = platforms[currentPlatform].defaults;
-      Object.keys(defaults).forEach(field => {
-        const element = document.getElementById(field);
-        if (element && element.value === '') {
-          element.value = defaults[field];
-        }
-      });
-    }
 
     const $ = (id) => document.getElementById(id);
 
@@ -548,54 +397,65 @@
       }, 3000);
     }
 
-    // Authentication functions
-    function checkAuthStatus() {
-      fetch('/auth/status')
-        .then(res => res.json())
-        .then(data => {
-          if (data.authenticated) {
-            showUserInfo(data.user);
-          } else {
-            showLoginButton();
-          }
-        })
-        .catch(err => {
-          console.error('Auth check failed:', err);
-          showLoginButton();
-        });
-    }
+    // Firebase Authentication
+    // Load Firebase config and auth functions
+    const script1 = document.createElement('script');
+    script1.src = 'firebase-config.js';
+    document.head.appendChild(script1);
 
-    function showUserInfo(user) {
-      document.getElementById('userPicture').src = user.picture;
-      document.getElementById('userName').textContent = user.name;
-      document.getElementById('userInfo').classList.remove('hidden');
-      document.getElementById('loginBtn').classList.add('hidden');
-    }
+    const script2 = document.createElement('script');
+    script2.src = 'firebase-auth.js';
+    document.head.appendChild(script2);
 
-    function showLoginButton() {
-      document.getElementById('userInfo').classList.add('hidden');
-      document.getElementById('loginBtn').classList.remove('hidden');
-    }
+    // Wait for Firebase to load, then initialize auth
+    script2.onload = function() {
+      // Check authentication state
+      checkAuthState();
+      
+      // Auth event listeners
+      document.getElementById('loginBtn').addEventListener('click', signInWithGoogle);
+      document.getElementById('logoutBtn').addEventListener('click', signOut);
+    };
 
     // Event listeners
     $("calcBtn").addEventListener("click", calc);
+    $("saveBtn").addEventListener("click", saveCurrentCalculation);
     $("shareBtn").addEventListener("click", shareLink);
     $("copyBtn").addEventListener("click", copySummary);
     $("resetBtn").addEventListener("click", resetAll);
     fields.forEach(f => $(f).addEventListener("input", calc));
 
-    // Auth event listeners
-    document.getElementById('loginBtn').addEventListener('click', () => {
-      window.location.href = '/auth/google';
-    });
+    // Save current calculation
+    function saveCurrentCalculation() {
+      const currentUser = getCurrentUser();
+      if (!currentUser) {
+        showNotification('Please sign in to save calculations', 'warning');
+        return;
+      }
 
-    document.getElementById('logoutBtn').addEventListener('click', () => {
-      window.location.href = '/auth/logout';
-    });
+      // Get current calculation data
+      const calculationData = {
+        hours: parseFloat($("hours").value) || 0,
+        miles: parseFloat($("miles").value) || 0,
+        basePay: parseFloat($("basePay").value) || 0,
+        tips: parseFloat($("tips").value) || 0,
+        onTripMiles: parseFloat($("onTripMiles").value) || 0,
+        platformFees: parseFloat($("platformFees").value) || 0,
+        gasPrice: parseFloat($("gasPrice").value) || 0,
+        mpg: parseFloat($("mpg").value) || 0,
+        wearTear: parseFloat($("wearTear").value) || 0,
+        taxRate: parseFloat($("taxRate").value) || 0,
+        grossHourly: parseFloat($("grossHourly").textContent.replace('$', '').replace('/hr', '')) || 0,
+        realHourly: parseFloat($("realHourly").textContent.replace('$', '').replace('/hr', '')) || 0,
+        netProfit: parseFloat($("netProfit").textContent.replace('$', '')) || 0,
+        timestamp: new Date().toISOString()
+      };
+
+      saveCalculation(calculationData);
+    }
 
     // Initialize
     load();
-    checkAuthStatus();
   </script>
 </body>
 </html>
