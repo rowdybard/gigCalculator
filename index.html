@@ -84,6 +84,12 @@
       </h1>
       <p class="text-slate-400 text-lg">Calculate your true hourly rate after expenses for any gig work</p>
       <p class="text-slate-500 text-sm mt-1">Powered by Hey Dispatch</p>
+      <div class="mt-4 p-3 bg-blue-900/30 rounded-lg border border-blue-700/30">
+        <p class="text-blue-300 text-sm">
+          <i class="fas fa-info-circle mr-2"></i>
+          <strong>Tip:</strong> Fill in your actual numbers and watch the results update in real-time!
+        </p>
+      </div>
     </header>
 
 
@@ -99,32 +105,32 @@
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label class="text-sm text-slate-300 font-medium">Hours Worked</label>
-              <input id="hours" type="number" step="0.1" class="w-full mt-1 rounded-lg bg-slate-700 ring-1 ring-white/10 p-3 text-lg" value="5" placeholder="0.0">
+              <input id="hours" type="number" step="0.1" min="0" class="w-full mt-1 rounded-lg bg-slate-700 ring-1 ring-white/10 p-3 text-lg" value="5" placeholder="0.0" oninput="validateNumber(this, 0)">
               <p class="text-xs text-slate-500 mt-1">Include all time from start to finish</p>
             </div>
             <div>
               <label class="text-sm text-slate-300 font-medium">Total Miles Driven</label>
-              <input id="miles" type="number" step="0.1" class="w-full mt-1 rounded-lg bg-slate-700 ring-1 ring-white/10 p-3 text-lg" value="120" placeholder="0.0">
+              <input id="miles" type="number" step="0.1" min="0" class="w-full mt-1 rounded-lg bg-slate-700 ring-1 ring-white/10 p-3 text-lg" value="120" placeholder="0.0" oninput="validateNumber(this, 0)">
               <p class="text-xs text-slate-500 mt-1">All miles including deadhead</p>
             </div>
             <div>
               <label class="text-sm text-slate-300 font-medium">Base Pay ($)</label>
-              <input id="gross" type="number" step="0.01" class="w-full mt-1 rounded-lg bg-slate-700 ring-1 ring-white/10 p-3 text-lg" value="180" placeholder="0.00">
+              <input id="gross" type="number" step="0.01" min="0" class="w-full mt-1 rounded-lg bg-slate-700 ring-1 ring-white/10 p-3 text-lg" value="180" placeholder="0.00" oninput="validateNumber(this, 0)">
               <p class="text-xs text-slate-500 mt-1">Platform base pay</p>
             </div>
             <div>
               <label class="text-sm text-slate-300 font-medium">Tips + Bonuses ($)</label>
-              <input id="tips" type="number" step="0.01" class="w-full mt-1 rounded-lg bg-slate-700 ring-1 ring-white/10 p-3 text-lg" value="20" placeholder="0.00">
+              <input id="tips" type="number" step="0.01" min="0" class="w-full mt-1 rounded-lg bg-slate-700 ring-1 ring-white/10 p-3 text-lg" value="20" placeholder="0.00" oninput="validateNumber(this, 0)">
               <p class="text-xs text-slate-500 mt-1">Customer tips and incentives</p>
             </div>
             <div>
               <label class="text-sm text-slate-300 font-medium">On-Trip Miles (Optional)</label>
-              <input id="onTripMiles" type="number" step="0.1" class="w-full mt-1 rounded-lg bg-slate-700 ring-1 ring-white/10 p-3 text-lg" value="" placeholder="0.0">
+              <input id="onTripMiles" type="number" step="0.1" min="0" class="w-full mt-1 rounded-lg bg-slate-700 ring-1 ring-white/10 p-3 text-lg" value="" placeholder="0.0" oninput="validateNumber(this, 0)">
               <p class="text-xs text-slate-500 mt-1">Miles while actively delivering</p>
             </div>
             <div>
               <label class="text-sm text-slate-300 font-medium">Platform Fees ($)</label>
-              <input id="fees" type="number" step="0.01" class="w-full mt-1 rounded-lg bg-slate-700 ring-1 ring-white/10 p-3 text-lg" value="0" placeholder="0.00">
+              <input id="fees" type="number" step="0.01" min="0" class="w-full mt-1 rounded-lg bg-slate-700 ring-1 ring-white/10 p-3 text-lg" value="0" placeholder="0.00" oninput="validateNumber(this, 0)">
               <p class="text-xs text-slate-500 mt-1">Any platform fees or commissions</p>
             </div>
           </div>
@@ -137,22 +143,22 @@
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label class="text-sm text-slate-300 font-medium">Gas Price ($/gallon)</label>
-              <input id="gas" type="number" step="0.01" class="w-full mt-1 rounded-lg bg-slate-700 ring-1 ring-white/10 p-3 text-lg" value="3.65" placeholder="0.00">
+              <input id="gas" type="number" step="0.01" min="0" class="w-full mt-1 rounded-lg bg-slate-700 ring-1 ring-white/10 p-3 text-lg" value="3.65" placeholder="0.00" oninput="validateNumber(this, 0)">
               <p class="text-xs text-slate-500 mt-1">Current local gas price</p>
             </div>
             <div>
               <label class="text-sm text-slate-300 font-medium">Vehicle MPG</label>
-              <input id="mpg" type="number" step="0.1" class="w-full mt-1 rounded-lg bg-slate-700 ring-1 ring-white/10 p-3 text-lg" value="26" placeholder="0.0">
+              <input id="mpg" type="number" step="0.1" min="0" class="w-full mt-1 rounded-lg bg-slate-700 ring-1 ring-white/10 p-3 text-lg" value="26" placeholder="0.0" oninput="validateNumber(this, 0)">
               <p class="text-xs text-slate-500 mt-1">Your vehicle's fuel efficiency</p>
             </div>
             <div>
               <label class="text-sm text-slate-300 font-medium">Wear & Tear ($/mile)</label>
-              <input id="wear" type="number" step="0.01" class="w-full mt-1 rounded-lg bg-slate-700 ring-1 ring-white/10 p-3 text-lg" value="0.67" placeholder="0.00">
+              <input id="wear" type="number" step="0.01" min="0" class="w-full mt-1 rounded-lg bg-slate-700 ring-1 ring-white/10 p-3 text-lg" value="0.67" placeholder="0.00" oninput="validateNumber(this, 0)">
               <p class="text-xs text-slate-500 mt-1">Typical range: $0.60-$0.70/mile</p>
             </div>
             <div>
               <label class="text-sm text-slate-300 font-medium">Estimated Tax Rate (%)</label>
-              <input id="tax" type="number" step="0.1" class="w-full mt-1 rounded-lg bg-slate-700 ring-1 ring-white/10 p-3 text-lg" value="15" placeholder="0.0">
+              <input id="tax" type="number" step="0.1" min="0" max="100" class="w-full mt-1 rounded-lg bg-slate-700 ring-1 ring-white/10 p-3 text-lg" value="0" placeholder="0.0" oninput="validateNumber(this, 0, 100)">
               <p class="text-xs text-slate-500 mt-1">Self-employment tax estimate</p>
             </div>
           </div>
@@ -322,25 +328,27 @@
     }
 
     function fmt(n, d=2) {
-      if (isNaN(n)) return "-";
+      if (isNaN(n) || n === null || n === undefined) return "$0.00";
       const fixed = Number(n).toFixed(d);
       return (Number(fixed) < 0 ? "-$" + Math.abs(Number(fixed)).toLocaleString() : "$" + Number(fixed).toLocaleString());
     }
     
-    function fmtHr(n){ return isNaN(n) ? "-" : "$" + n.toFixed(2) + "/hr"; }
-    function fmtMi(n){ return isNaN(n) ? "-" : "$" + n.toFixed(2) + "/mi"; }
+    function fmtHr(n){ return isNaN(n) || n === null || n === undefined ? "$0.00/hr" : "$" + n.toFixed(2) + "/hr"; }
+    function fmtMi(n){ return isNaN(n) || n === null || n === undefined ? "$0.00/mi" : "$" + n.toFixed(2) + "/mi"; }
 
     function calc() {
       const v = read();
-      const hours = Math.max(v.hours || 0, 0.0001);
-      const miles = Math.max(v.miles || 0, 0);
-      const gross = (v.gross || 0) + (v.tips || 0);
-      const gasPrice = v.gas || 0;
-      const mpg = Math.max(v.mpg || 0, 0.0001);
-      const wear = v.wear || 0;
-      const fees = v.fees || 0;
-      const taxRate = Math.max(v.tax || 0, 0) / 100;
-      const onTripMiles = v.onTripMiles || 0;
+      
+      // Input validation and sanitization
+      const hours = Math.max(parseFloat(v.hours) || 0, 0.0001);
+      const miles = Math.max(parseFloat(v.miles) || 0, 0);
+      const gross = (parseFloat(v.gross) || 0) + (parseFloat(v.tips) || 0);
+      const gasPrice = Math.max(parseFloat(v.gas) || 0, 0);
+      const mpg = Math.max(parseFloat(v.mpg) || 0, 0.0001);
+      const wear = Math.max(parseFloat(v.wear) || 0, 0);
+      const fees = Math.max(parseFloat(v.fees) || 0, 0);
+      const taxRate = Math.min(Math.max(parseFloat(v.tax) || 0, 0), 100) / 100;
+      const onTripMiles = Math.max(parseFloat(v.onTripMiles) || 0, 0);
 
       // Costs
       const fuelCost = (miles / mpg) * gasPrice;
@@ -349,19 +357,20 @@
 
       // Profit & tax
       const profitBeforeTax = gross - costBeforeTax;
-      const estTax = Math.max(profitBeforeTax, 0) * taxRate;
+      // Tax is calculated on gross earnings, not just positive profit
+      const estTax = gross * taxRate;
       const netProfit = profitBeforeTax - estTax;
 
-      // Rates
-      const grossHourly = gross / hours;
-      const realHourly = netProfit / hours;
-      const grossPerMile = miles > 0 ? gross / miles : NaN;
-      const netPerMile = miles > 0 ? netProfit / miles : NaN;
-      const activeGrossDpm = (onTripMiles > 0) ? (gross / onTripMiles) : NaN;
-      const activeNetDpm = (onTripMiles > 0) ? (netProfit / onTripMiles) : NaN;
+      // Rates (with safety checks)
+      const grossHourly = hours > 0 ? gross / hours : 0;
+      const realHourly = hours > 0 ? netProfit / hours : 0;
+      const grossPerMile = miles > 0 ? gross / miles : 0;
+      const netPerMile = miles > 0 ? netProfit / miles : 0;
+      const activeGrossDpm = onTripMiles > 0 ? gross / onTripMiles : 0;
+      const activeNetDpm = onTripMiles > 0 ? netProfit / onTripMiles : 0;
 
       // Targets
-      const breakEvenHr = (costBeforeTax + estTax) / hours;
+      const breakEvenHr = hours > 0 ? (costBeforeTax + estTax) / hours : 0;
       const targetHr = 30;
       const reqGrossForTarget = targetHr * hours + costBeforeTax + estTax;
 
@@ -372,19 +381,19 @@
       updateStat("fuelCost", fmt(fuelCost), "text-red-400");
       updateStat("vehicleCost", fmt(vehicleCost), "text-red-400");
       updateStat("estTax", fmt(estTax), "text-red-400");
-      updateStat("grossPerMile", grossPerMile ? fmtMi(grossPerMile) : "-", "text-green-400");
-      updateStat("dollarsPerMile", netPerMile ? fmtMi(netPerMile) : "-", "text-blue-400");
-      updateStat("activeGrossDpm", activeGrossDpm ? fmtMi(activeGrossDpm) : "-", "text-green-400");
-      updateStat("activeDpm", activeNetDpm ? fmtMi(activeNetDpm) : "-", "text-blue-400");
+      updateStat("grossPerMile", fmtMi(grossPerMile), "text-green-400");
+      updateStat("dollarsPerMile", fmtMi(netPerMile), "text-blue-400");
+      updateStat("activeGrossDpm", fmtMi(activeGrossDpm), "text-green-400");
+      updateStat("activeDpm", fmtMi(activeNetDpm), "text-blue-400");
       updateStat("breakEvenHr", fmtHr(breakEvenHr), "text-yellow-400");
       updateStat("reqGross", fmt(reqGrossForTarget), "text-green-400");
 
       const summary = [
-        `🚛 ${platforms[currentPlatform].name.toUpperCase()} GIG SUMMARY`,
-        `⏱️  Hours: ${hours} | 🛣️  Miles: ${miles}`,
+        `🚛 GIG CALCULATOR SUMMARY`,
+        `⏱️  Hours: ${hours.toFixed(1)} | 🛣️  Miles: ${miles.toFixed(1)}`,
         `💰 Gross: ${fmt(gross)} | Real Hourly: ${fmtHr(realHourly)} (Gross: ${fmtHr(grossHourly)})`,
         `💸 Costs → Fuel: ${fmt(fuelCost)}, Wear: ${fmt(vehicleCost)}, Fees: ${fmt(fees)}, Tax: ${fmt(estTax)}`,
-        `💵 Net Profit: ${fmt(netProfit)} | $/mi (gross/net): ${grossPerMile ? fmtMi(grossPerMile) : "-"}/${netPerMile ? fmtMi(netPerMile) : "-"}` + (onTripMiles ? ` | On-trip: ${activeGrossDpm ? fmtMi(activeGrossDpm) : "-"}/${activeNetDpm ? fmtMi(activeNetDpm) : "-"}` : ""),
+        `💵 Net Profit: ${fmt(netProfit)} | $/mi (gross/net): ${fmtMi(grossPerMile)}/${fmtMi(netPerMile)}` + (onTripMiles > 0 ? ` | On-trip: ${fmtMi(activeGrossDpm)}/${fmtMi(activeNetDpm)}` : ""),
         `🎯 To hit $${targetHr}/hr: need ${fmt(reqGrossForTarget)} gross`,
         `📊 Break-even rate: ${fmtHr(breakEvenHr)}`
       ].join("\n");
@@ -392,7 +401,7 @@
       $("summary").textContent = summary;
 
       // Persist data
-      localStorage.setItem("gigCalc", JSON.stringify({...read(), platform: currentPlatform}));
+      localStorage.setItem("gigCalc", JSON.stringify(read()));
     }
 
     function updateStat(id, text, colorClass) {
@@ -707,7 +716,7 @@
       const calculationData = {
         hours: parseFloat($("hours").value) || 0,
         miles: parseFloat($("miles").value) || 0,
-        basePay: parseFloat($("gross").value) || 0,
+        gross: parseFloat($("gross").value) || 0,
         tips: parseFloat($("tips").value) || 0,
         onTripMiles: parseFloat($("onTripMiles").value) || 0,
         platformFees: parseFloat($("fees").value) || 0,
@@ -722,6 +731,52 @@
       };
 
       saveCalculation(calculationData);
+    }
+
+    // Number validation function
+    function validateNumber(input, min = 0, max = null) {
+      let value = input.value;
+      
+      // Remove any non-numeric characters except decimal point
+      value = value.replace(/[^0-9.]/g, '');
+      
+      // Ensure only one decimal point
+      const parts = value.split('.');
+      if (parts.length > 2) {
+        value = parts[0] + '.' + parts.slice(1).join('');
+      }
+      
+      // Convert to number and validate
+      let numValue = parseFloat(value);
+      if (isNaN(numValue)) {
+        numValue = 0;
+      }
+      
+      // Apply min/max constraints
+      if (numValue < min) numValue = min;
+      if (max !== null && numValue > max) numValue = max;
+      
+      // Update input value
+      input.value = numValue;
+      
+      // Trigger calculation
+      calc();
+    }
+
+    // Format currency to always show 2 decimal places
+    function formatCurrency(amount) {
+      if (isNaN(amount) || amount === null || amount === undefined) {
+        return '$0.00';
+      }
+      return '$' + parseFloat(amount).toFixed(2);
+    }
+
+    // Format percentage to always show 1 decimal place
+    function formatPercentage(amount) {
+      if (isNaN(amount) || amount === null || amount === undefined) {
+        return '0.0%';
+      }
+      return parseFloat(amount).toFixed(1) + '%';
     }
 
     // Initialize
