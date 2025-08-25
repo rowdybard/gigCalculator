@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: gig-calculator
+    env: static
+    buildCommand: echo "Static site - no build required"
+    startCommand: npx http-server -p $PORT -o
+    envVars:
+      - key: NODE_VERSION
+        value: 18.17.0
