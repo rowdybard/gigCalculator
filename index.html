@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Gig Worker Pay Calculator - Roadie & More</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <style>
+    .platform-card { transition: all 0.2s ease; }
+    .platform-card:hover { transform: translateY(-2px); }
+    .platform-card.selected { border-color: #6366f1; background-color: rgba(99, 102, 241, 0.1); }
+    .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+    .stat-card { backdrop-filter: blur(10px); }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-100 min-h-screen">
+  <div class="max-w-6xl mx-auto p-4 space-y-6">
+    <!-- Header -->
+    <header class="text-center space-y-2">
+      <h1 class="text-4xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+        <i class="fas fa-truck-moving mr-3"></i>Gig Worker Pay Calculator
+      </h1>
+      <p class="text-slate-400 text-lg">Calculate your true hourly rate after expenses for Roadie, DoorDash, Uber, and more</p>
+    </header>
+
+    <!-- Platform Selection -->
+    <section class="bg-slate-800/60 rounded-2xl p-6 ring-1 ring-white/10">
+      <h2 class="text-xl font-semibold mb-4 flex items-center">
+        <i class="fas fa-layer-group mr-2 text-indigo-400"></i>Select Your Platform
+      </h2>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="platform-card selected bg-slate-700/60 rounded-xl p-4 ring-1 ring-white/10 cursor-pointer" data-platform="roadie">
+          <div class="text-center">
+            <i class="fas fa-truck text-2xl text-blue-500 mb-2"></i>
+            <div class="font-semibold">Roadie</div>
+            <div class="text-xs text-slate-400">Delivery & Moving</div>
+          </div>
+        </div>
+        <div class="platform-card bg-slate-700/60 rounded-xl p-4 ring-1 ring-white/10 cursor-pointer" data-platform="doordash">
+          <div class="text-center">
+            <i class="fas fa-utensils text-2xl text-red-500 mb-2"></i>
+            <div class="font-semibold">DoorDash</div>
+            <div class="text-xs text-slate-400">Food Delivery</div>
+          </div>
+        </div>
+        <div class="platform-card bg-slate-700/60 rounded-xl p-4 ring-1 ring-white/10 cursor-pointer" data-platform="uber">
+          <div class="text-center">
+            <i class="fas fa-car text-2xl text-black bg-white rounded-full p-1 mb-2"></i>
+            <div class="font-semibold">Uber</div>
+            <div class="text-xs text-slate-400">Rides & Delivery</div>
+          </div>
+        </div>
+        <div class="platform-card bg-slate-700/60 rounded-xl p-4 ring-1 ring-white/10 cursor-pointer" data-platform="flex">
+          <div class="text-center">
+            <i class="fas fa-box text-2xl text-orange-500 mb-2"></i>
+            <div class="font-semibold">Amazon Flex</div>
+            <div class="text-xs text-slate-400">Package Delivery</div>
+          </div>
+        </div>
+        <div class="platform-card bg-slate-700/60 rounded-xl p-4 ring-1 ring-white/10 cursor-pointer" data-platform="instacart">
+          <div class="text-center">
+            <i class="fas fa-shopping-cart text-2xl text-green-500 mb-2"></i>
+            <div class="font-semibold">Instacart</div>
+            <div class="text-xs text-slate-400">Grocery Delivery</div>
+          </div>
+        </div>
+        <div class="platform-card bg-slate-700/60 rounded-xl p-4 ring-1 ring-white/10 cursor-pointer" data-platform="grubhub">
+          <div class="text-center">
+            <i class="fas fa-hamburger text-2xl text-yellow-500 mb-2"></i>
+            <div class="font-semibold">GrubHub</div>
+            <div class="text-xs text-slate-400">Food Delivery</div>
+          </div>
+        </div>
+        <div class="platform-card bg-slate-700/60 rounded-xl p-4 ring-1 ring-white/10 cursor-pointer" data-platform="lyft">
+          <div class="text-center">
+            <i class="fas fa-car-side text-2xl text-pink-500 mb-2"></i>
+            <div class="font-semibold">Lyft</div>
+            <div class="text-xs text-slate-400">Rideshare</div>
+          </div>
+        </div>
+        <div class="platform-card bg-slate-700/60 rounded-xl p-4 ring-1 ring-white/10 cursor-pointer" data-platform="custom">
+          <div class="text-center">
+            <i class="fas fa-cog text-2xl text-gray-500 mb-2"></i>
+            <div class="font-semibold">Custom</div>
+            <div class="text-xs text-slate-400">Other Platform</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Calculator -->
+    <div class="grid lg:grid-cols-3 gap-6">
+      <!-- Inputs -->
+      <div class="lg:col-span-2 space-y-6">
+        <section class="bg-slate-800/60 rounded-2xl p-6 ring-1 ring-white/10">
+          <h2 class="text-xl font-semibold mb-4 flex items-center">
+            <i class="fas fa-calculator mr-2 text-indigo-400"></i>Earnings & Time
+          </h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="text-sm text-slate-300 font-medium">Hours Worked</label>
+              <input id="hours" type="number" step="0.1" class="w-full mt-1 rounded-lg bg-slate-700 ring-1 ring-white/10 p-3 text-lg" value="5" placeholder="0.0">
+              <p class="text-xs text-slate-500 mt-1">Include all time from start to finish</p>
+            </div>
+            <div>
+              <label class="text-sm text-slate-300 font-medium">Total Miles Driven</label>
+              <input id="miles" type="number" step="0.1" class="w-full mt-1 rounded-lg bg-slate-700 ring-1 ring-white/10 p-3 text-lg" value="120" placeholder="0.0">
+              <p class="text-xs text-slate-500 mt-1">All miles including deadhead</p>
+            </div>
+            <div>
+              <label class="text-sm text-slate-300 font-medium">Base Pay ($)</label>
+              <input id="gross" type="number" step="0.01" class="w-full mt-1 rounded-lg bg-slate-700 ring-1 ring-white/10 p-3 text-lg" value="180" placeholder="0.00">
+              <p class="text-xs text-slate-500 mt-1">Platform base pay</p>
+            </div>
+            <div>
+              <label class="text-sm text-slate-300 font-medium">Tips + Bonuses ($)</label>
+              <input id="tips" type="number" step="0.01" class="w-full mt-1 rounded-lg bg-slate-700 ring-1 ring-white/10 p-3 text-lg" value="20" placeholder="0.00">
+              <p class="text-xs text-slate-500 mt-1">Customer tips and incentives</p>
+            </div>
+            <div>
+              <label class="text-sm text-slate-300 font-medium">On-Trip Miles (Optional)</label>
+              <input id="onTripMiles" type="number" step="0.1" class="w-full mt-1 rounded-lg bg-slate-700 ring-1 ring-white/10 p-3 text-lg" value="" placeholder="0.0">
+              <p class="text-xs text-slate-500 mt-1">Miles while actively delivering</p>
+            </div>
+            <div>
+              <label class="text-sm text-slate-300 font-medium">Platform Fees ($)</label>
+              <input id="fees" type="number" step="0.01" class="w-full mt-1 rounded-lg bg-slate-700 ring-1 ring-white/10 p-3 text-lg" value="0" placeholder="0.00">
+              <p class="text-xs text-slate-500 mt-1">Any platform fees or commissions</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="bg-slate-800/60 rounded-2xl p-6 ring-1 ring-white/10">
+          <h2 class="text-xl font-semibold mb-4 flex items-center">
+            <i class="fas fa-gas-pump mr-2 text-indigo-400"></i>Vehicle Costs
+          </h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="text-sm text-slate-300 font-medium">Gas Price ($/gallon)</label>
+              <input id="gas" type="number" step="0.01" class="w-full mt-1 rounded-lg bg-slate-700 ring-1 ring-white/10 p-3 text-lg" value="3.65" placeholder="0.00">
+              <p class="text-xs text-slate-500 mt-1">Current local gas price</p>
+            </div>
+            <div>
+              <label class="text-sm text-slate-300 font-medium">Vehicle MPG</label>
+              <input id="mpg" type="number" step="0.1" class="w-full mt-1 rounded-lg bg-slate-700 ring-1 ring-white/10 p-3 text-lg" value="26" placeholder="0.0">
+              <p class="text-xs text-slate-500 mt-1">Your vehicle's fuel efficiency</p>
+            </div>
+            <div>
+              <label class="text-sm text-slate-300 font-medium">Wear & Tear ($/mile)</label>
+              <input id="wear" type="number" step="0.01" class="w-full mt-1 rounded-lg bg-slate-700 ring-1 ring-white/10 p-3 text-lg" value="0.67" placeholder="0.00">
+              <p class="text-xs text-slate-500 mt-1">Typical range: $0.60-$0.70/mile</p>
+            </div>
+            <div>
+              <label class="text-sm text-slate-300 font-medium">Estimated Tax Rate (%)</label>
+              <input id="tax" type="number" step="0.1" class="w-full mt-1 rounded-lg bg-slate-700 ring-1 ring-white/10 p-3 text-lg" value="15" placeholder="0.0">
+              <p class="text-xs text-slate-500 mt-1">Self-employment tax estimate</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Action Buttons -->
+        <div class="flex flex-wrap gap-3">
+          <button id="calcBtn" class="px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 font-semibold transition-all">
+            <i class="fas fa-calculator mr-2"></i>Calculate
+          </button>
+          <button id="shareBtn" class="px-6 py-3 rounded-xl bg-slate-700 hover:bg-slate-600 ring-1 ring-white/10 font-semibold transition-all">
+            <i class="fas fa-share mr-2"></i>Share Link
+          </button>
+          <button id="copyBtn" class="px-6 py-3 rounded-xl bg-slate-700 hover:bg-slate-600 ring-1 ring-white/10 font-semibold transition-all">
+            <i class="fas fa-copy mr-2"></i>Copy Summary
+          </button>
+          <button id="resetBtn" class="px-6 py-3 rounded-xl bg-slate-700 hover:bg-slate-600 ring-1 ring-white/10 font-semibold transition-all">
+            <i class="fas fa-redo mr-2"></i>Reset
+          </button>
+        </div>
+      </div>
+
+      <!-- Results Sidebar -->
+      <div class="space-y-6">
+        <section class="bg-slate-800/60 rounded-2xl p-6 ring-1 ring-white/10">
+          <h2 class="text-xl font-semibold mb-4 flex items-center">
+            <i class="fas fa-chart-line mr-2 text-indigo-400"></i>Results
+          </h2>
+          <div class="space-y-4">
+            <div class="stat-card bg-slate-700/60 rounded-xl p-4 ring-1 ring-white/5">
+              <div class="text-sm text-slate-400">Gross Hourly Rate</div>
+              <div id="grossHourly" class="text-2xl font-bold text-green-400">$40.00/hr</div>
+            </div>
+            <div class="stat-card bg-slate-700/60 rounded-xl p-4 ring-1 ring-white/5">
+              <div class="text-sm text-slate-400">Real Hourly Rate</div>
+              <div id="realHourly" class="text-2xl font-bold text-blue-400">$28.50/hr</div>
+              <div class="text-xs text-slate-500 mt-1">After costs & taxes</div>
+            </div>
+            <div class="stat-card bg-slate-700/60 rounded-xl p-4 ring-1 ring-white/5">
+              <div class="text-sm text-slate-400">Net Profit</div>
+              <div id="netProfit" class="text-2xl font-bold text-purple-400">$142.50</div>
+            </div>
+            <div class="stat-card bg-slate-700/60 rounded-xl p-4 ring-1 ring-white/5">
+              <div class="text-sm text-slate-400">Cost Breakdown</div>
+              <div class="space-y-2 mt-2">
+                <div class="flex justify-between text-sm">
+                  <span>Fuel:</span>
+                  <span id="fuelCost" class="text-red-400">$16.85</span>
+                </div>
+                <div class="flex justify-between text-sm">
+                  <span>Wear & Tear:</span>
+                  <span id="vehicleCost" class="text-red-400">$80.40</span>
+                </div>
+                <div class="flex justify-between text-sm">
+                  <span>Taxes:</span>
+                  <span id="estTax" class="text-red-400">$12.38</span>
+                </div>
+              </div>
+            </div>
+                         <div class="stat-card bg-slate-700/60 rounded-xl p-4 ring-1 ring-white/5">
+               <div class="text-sm text-slate-400">Per Mile Rates</div>
+               <div class="space-y-2 mt-2">
+                 <div class="flex justify-between text-sm">
+                   <span>Gross (all miles):</span>
+                   <span id="grossPerMile" class="text-green-400">$1.67/mi</span>
+                 </div>
+                 <div class="flex justify-between text-sm">
+                   <span>Net (all miles):</span>
+                   <span id="dollarsPerMile" class="text-blue-400">$1.19/mi</span>
+                 </div>
+                 <div class="flex justify-between text-sm">
+                   <span>Gross (on-trip):</span>
+                   <span id="activeGrossDpm" class="text-green-400">-</span>
+                 </div>
+                 <div class="flex justify-between text-sm">
+                   <span>Net (on-trip):</span>
+                   <span id="activeDpm" class="text-blue-400">-</span>
+                 </div>
+               </div>
+             </div>
+            <div class="stat-card bg-slate-700/60 rounded-xl p-4 ring-1 ring-white/5">
+              <div class="text-sm text-slate-400">Target Analysis</div>
+              <div class="space-y-2 mt-2">
+                <div class="flex justify-between text-sm">
+                  <span>Break-even:</span>
+                  <span id="breakEvenHr" class="text-yellow-400">$21.93/hr</span>
+                </div>
+                <div class="flex justify-between text-sm">
+                  <span>For $30/hr:</span>
+                  <span id="reqGross" class="text-green-400">$246.00</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Platform Tips -->
+        <section class="bg-slate-800/60 rounded-2xl p-6 ring-1 ring-white/10">
+          <h2 class="text-xl font-semibold mb-4 flex items-center">
+            <i class="fas fa-lightbulb mr-2 text-indigo-400"></i>Platform Tips
+          </h2>
+          <div id="platformTips" class="text-sm text-slate-300 space-y-2">
+            <p><strong>Roadie:</strong> Focus on longer hauls and furniture moves for better pay per mile. Consider vehicle size and insurance requirements.</p>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- Summary Section -->
+    <section class="bg-slate-800/60 rounded-2xl p-6 ring-1 ring-white/10">
+      <h2 class="text-xl font-semibold mb-4 flex items-center">
+        <i class="fas fa-file-alt mr-2 text-indigo-400"></i>Summary
+      </h2>
+      <pre id="summary" class="whitespace-pre-wrap text-sm text-slate-300 bg-slate-900/60 p-4 rounded-lg ring-1 ring-white/5 font-mono"></pre>
+    </section>
+
+    <footer class="text-center text-sm text-slate-500 py-6">
+      <p>This calculator provides estimates only. Consult with a tax professional for accurate tax advice.</p>
+      <p class="mt-2">Built for gig workers by gig workers 💪</p>
+    </footer>
+  </div>
+
+  <script>
+    // Platform data with tips and default values
+    const platforms = {
+      roadie: {
+        name: "Roadie",
+        icon: "fas fa-truck",
+        color: "text-blue-500",
+        tips: "Focus on longer hauls and furniture moves for better pay per mile. Consider vehicle size and insurance requirements. Roadie often pays better for larger items and longer distances.",
+        defaults: { wear: 0.67, fees: 0 }
+      },
+      doordash: {
+        name: "DoorDash",
+        icon: "fas fa-utensils",
+        color: "text-red-500",
+        tips: "Peak hours (lunch/dinner) typically pay better. Consider hot spots and restaurant wait times. Tips can significantly impact earnings.",
+        defaults: { wear: 0.65, fees: 0 }
+      },
+      uber: {
+        name: "Uber",
+        icon: "fas fa-car",
+        color: "text-black bg-white rounded-full p-1",
+        tips: "Surge pricing during busy times can dramatically increase earnings. Consider both rides and Uber Eats for maximum income.",
+        defaults: { wear: 0.65, fees: 0 }
+      },
+      flex: {
+        name: "Amazon Flex",
+        icon: "fas fa-box",
+        color: "text-orange-500",
+        tips: "Block scheduling can provide consistent income. Consider warehouse location and delivery area density. Tips are rare but blocks can be profitable.",
+        defaults: { wear: 0.68, fees: 0 }
+      },
+      instacart: {
+        name: "Instacart",
+        icon: "fas fa-shopping-cart",
+        color: "text-green-500",
+        tips: "Large orders and heavy items often pay better. Consider store familiarity and shopping efficiency. Tips are crucial for profitability.",
+        defaults: { wear: 0.65, fees: 0 }
+      },
+      grubhub: {
+        name: "GrubHub",
+        icon: "fas fa-hamburger",
+        color: "text-yellow-500",
+        tips: "Restaurant partnerships can provide consistent orders. Consider delivery radius and restaurant density in your area.",
+        defaults: { wear: 0.65, fees: 0 }
+      },
+      lyft: {
+        name: "Lyft",
+        icon: "fas fa-car-side",
+        color: "text-pink-500",
+        tips: "Peak hours and events can provide surge pricing. Consider both passenger rides and delivery options for maximum earnings.",
+        defaults: { wear: 0.65, fees: 0 }
+      },
+      custom: {
+        name: "Custom Platform",
+        icon: "fas fa-cog",
+        color: "text-gray-500",
+        tips: "Adjust wear & tear and other costs based on your specific platform and vehicle type.",
+        defaults: { wear: 0.65, fees: 0 }
+      }
+    };
+
+    let currentPlatform = 'roadie';
+    const fields = ["hours","miles","gross","tips","gas","mpg","wear","fees","tax","onTripMiles"];
+
+    // Platform selection
+    document.querySelectorAll('.platform-card').forEach(card => {
+      card.addEventListener('click', () => {
+        document.querySelectorAll('.platform-card').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+        currentPlatform = card.dataset.platform;
+        updatePlatformTips();
+        updateDefaults();
+        calc();
+      });
+    });
+
+    function updatePlatformTips() {
+      const tipsDiv = document.getElementById('platformTips');
+      tipsDiv.innerHTML = `<p><strong>${platforms[currentPlatform].name}:</strong> ${platforms[currentPlatform].tips}</p>`;
+    }
+
+    function updateDefaults() {
+      const defaults = platforms[currentPlatform].defaults;
+      Object.keys(defaults).forEach(field => {
+        const element = document.getElementById(field);
+        if (element && element.value === '') {
+          element.value = defaults[field];
+        }
+      });
+    }
+
+    const $ = (id) => document.getElementById(id);
+
+    function read() {
+      const v = {};
+      fields.forEach(f => {
+        const raw = $(f).value.trim();
+        v[f] = raw === "" ? "" : Number(raw);
+      });
+      return v;
+    }
+
+    function fmt(n, d=2) {
+      if (isNaN(n)) return "-";
+      const fixed = Number(n).toFixed(d);
+      return (Number(fixed) < 0 ? "-$" + Math.abs(Number(fixed)).toLocaleString() : "$" + Number(fixed).toLocaleString());
+    }
+    
+    function fmtHr(n){ return isNaN(n) ? "-" : "$" + n.toFixed(2) + "/hr"; }
+    function fmtMi(n){ return isNaN(n) ? "-" : "$" + n.toFixed(2) + "/mi"; }
+
+    function calc() {
+      const v = read();
+      const hours = Math.max(v.hours || 0, 0.0001);
+      const miles = Math.max(v.miles || 0, 0);
+      const gross = (v.gross || 0) + (v.tips || 0);
+      const gasPrice = v.gas || 0;
+      const mpg = Math.max(v.mpg || 0, 0.0001);
+      const wear = v.wear || 0;
+      const fees = v.fees || 0;
+      const taxRate = Math.max(v.tax || 0, 0) / 100;
+      const onTripMiles = v.onTripMiles || 0;
+
+      // Costs
+      const fuelCost = (miles / mpg) * gasPrice;
+      const vehicleCost = miles * wear;
+      const costBeforeTax = fuelCost + vehicleCost + fees;
+
+      // Profit & tax
+      const profitBeforeTax = gross - costBeforeTax;
+      const estTax = Math.max(profitBeforeTax, 0) * taxRate;
+      const netProfit = profitBeforeTax - estTax;
+
+      // Rates
+      const grossHourly = gross / hours;
+      const realHourly = netProfit / hours;
+      const grossPerMile = miles > 0 ? gross / miles : NaN;
+      const netPerMile = miles > 0 ? netProfit / miles : NaN;
+      const activeGrossDpm = (onTripMiles > 0) ? (gross / onTripMiles) : NaN;
+      const activeNetDpm = (onTripMiles > 0) ? (netProfit / onTripMiles) : NaN;
+
+      // Targets
+      const breakEvenHr = (costBeforeTax + estTax) / hours;
+      const targetHr = 30;
+      const reqGrossForTarget = targetHr * hours + costBeforeTax + estTax;
+
+      // Update UI with animations
+      updateStat("grossHourly", fmtHr(grossHourly), "text-green-400");
+      updateStat("realHourly", fmtHr(realHourly), "text-blue-400");
+      updateStat("netProfit", fmt(netProfit), "text-purple-400");
+      updateStat("fuelCost", fmt(fuelCost), "text-red-400");
+      updateStat("vehicleCost", fmt(vehicleCost), "text-red-400");
+      updateStat("estTax", fmt(estTax), "text-red-400");
+      updateStat("grossPerMile", grossPerMile ? fmtMi(grossPerMile) : "-", "text-green-400");
+      updateStat("dollarsPerMile", netPerMile ? fmtMi(netPerMile) : "-", "text-blue-400");
+      updateStat("activeGrossDpm", activeGrossDpm ? fmtMi(activeGrossDpm) : "-", "text-green-400");
+      updateStat("activeDpm", activeNetDpm ? fmtMi(activeNetDpm) : "-", "text-blue-400");
+      updateStat("breakEvenHr", fmtHr(breakEvenHr), "text-yellow-400");
+      updateStat("reqGross", fmt(reqGrossForTarget), "text-green-400");
+
+      const summary = [
+        `🚛 ${platforms[currentPlatform].name.toUpperCase()} GIG SUMMARY`,
+        `⏱️  Hours: ${hours} | 🛣️  Miles: ${miles}`,
+        `💰 Gross: ${fmt(gross)} | Real Hourly: ${fmtHr(realHourly)} (Gross: ${fmtHr(grossHourly)})`,
+        `💸 Costs → Fuel: ${fmt(fuelCost)}, Wear: ${fmt(vehicleCost)}, Fees: ${fmt(fees)}, Tax: ${fmt(estTax)}`,
+        `💵 Net Profit: ${fmt(netProfit)} | $/mi (gross/net): ${grossPerMile ? fmtMi(grossPerMile) : "-"}/${netPerMile ? fmtMi(netPerMile) : "-"}` + (onTripMiles ? ` | On-trip: ${activeGrossDpm ? fmtMi(activeGrossDpm) : "-"}/${activeNetDpm ? fmtMi(activeNetDpm) : "-"}` : ""),
+        `🎯 To hit $${targetHr}/hr: need ${fmt(reqGrossForTarget)} gross`,
+        `📊 Break-even rate: ${fmtHr(breakEvenHr)}`
+      ].join("\n");
+      
+      $("summary").textContent = summary;
+
+      // Persist data
+      localStorage.setItem("gigCalc", JSON.stringify({...read(), platform: currentPlatform}));
+    }
+
+    function updateStat(id, text, colorClass) {
+      const element = $(id);
+      if (element) {
+        element.className = `text-2xl font-bold ${colorClass}`;
+        element.textContent = text;
+      }
+    }
+
+    function load() {
+      // URL params → fields
+      const params = new URLSearchParams(location.search);
+      if (params.size) {
+        fields.forEach(f => {
+          const val = params.get(f);
+          if (val !== null) $(f).value = val;
+        });
+        const platform = params.get('platform');
+        if (platform && platforms[platform]) {
+          currentPlatform = platform;
+          document.querySelectorAll('.platform-card').forEach(c => c.classList.remove('selected'));
+          document.querySelector(`[data-platform="${platform}"]`).classList.add('selected');
+        }
+      } else {
+        // localStorage fallback
+        const saved = localStorage.getItem("gigCalc");
+        if (saved) {
+          const obj = JSON.parse(saved);
+          fields.forEach(f => { if (obj[f] !== undefined) $(f).value = obj[f]; });
+          if (obj.platform && platforms[obj.platform]) {
+            currentPlatform = obj.platform;
+            document.querySelectorAll('.platform-card').forEach(c => c.classList.remove('selected'));
+            document.querySelector(`[data-platform="${obj.platform}"]`).classList.add('selected');
+          }
+        }
+      }
+      updatePlatformTips();
+      calc();
+    }
+
+    function shareLink() {
+      const v = read();
+      const params = new URLSearchParams();
+      fields.forEach(f => {
+        const raw = $(f).value.trim();
+        if (raw !== "") params.set(f, raw);
+      });
+      params.set('platform', currentPlatform);
+      const url = location.origin + location.pathname + "?" + params.toString();
+      navigator.clipboard.writeText(url).then(() => {
+        showNotification("Link copied to clipboard!", "success");
+      });
+    }
+
+    function copySummary() {
+      const txt = $("summary").textContent;
+      navigator.clipboard.writeText(txt).then(() => {
+        showNotification("Summary copied to clipboard!", "success");
+      });
+    }
+
+    function resetAll() {
+      fields.forEach(f => $(f).value = "");
+      localStorage.removeItem("gigCalc");
+      history.replaceState({}, "", location.pathname);
+      currentPlatform = 'roadie';
+      document.querySelectorAll('.platform-card').forEach(c => c.classList.remove('selected'));
+      document.querySelector('[data-platform="roadie"]').classList.add('selected');
+      updatePlatformTips();
+      calc();
+    }
+
+    function showNotification(message, type = "info") {
+      const notification = document.createElement('div');
+      notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg text-white font-semibold z-50 ${
+        type === 'success' ? 'bg-green-600' : 'bg-blue-600'
+      }`;
+      notification.textContent = message;
+      document.body.appendChild(notification);
+      setTimeout(() => {
+        notification.remove();
+      }, 3000);
+    }
+
+    // Event listeners
+    $("calcBtn").addEventListener("click", calc);
+    $("shareBtn").addEventListener("click", shareLink);
+    $("copyBtn").addEventListener("click", copySummary);
+    $("resetBtn").addEventListener("click", resetAll);
+    fields.forEach(f => $(f).addEventListener("input", calc));
+
+    // Initialize
+    load();
+  </script>
+</body>
+</html>
