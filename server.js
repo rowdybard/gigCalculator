@@ -31,11 +31,11 @@ app.use(helmet({
     directives: {
       defaultSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com", "https://cdnjs.cloudflare.com"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com", "https://accounts.google.com"],
       fontSrc: ["'self'", "https://cdnjs.cloudflare.com"],
       imgSrc: ["'self'", "data:", "https:"],
-      connectSrc: ["'self'"],
-      frameSrc: ["'self'"],
+      connectSrc: ["'self'", "https://accounts.google.com", "https://oauth2.googleapis.com", "https://www.googleapis.com"],
+      frameSrc: ["'self'", "https://accounts.google.com"],
       objectSrc: ["'none'"],
       upgradeInsecureRequests: [],
     },
@@ -62,6 +62,12 @@ app.use(session({
 // Serve static files
 app.use(express.static(path.join(__dirname, './')));
 
+// Serve auth.js with correct MIME type
+app.get('/auth.js', (req, res) => {
+  res.setHeader('Content-Type', 'application/javascript');
+  res.sendFile(path.join(__dirname, 'public/auth.js'));
+});
+
 // API Routes
 app.get('/api/health', (req, res) => {
   res.json({ 
@@ -69,6 +75,13 @@ app.get('/api/health', (req, res) => {
     message: 'Gig Calculator API is running',
     poweredBy: 'Hey Dispatch',
     timestamp: new Date().toISOString()
+  });
+});
+
+// Get Google client ID for frontend
+app.get('/api/config', (req, res) => {
+  res.json({
+    googleClientId: process.env.GOOGLE_CLIENT_ID || '863699815068-abc123def456.apps.googleusercontent.com'
   });
 });
 

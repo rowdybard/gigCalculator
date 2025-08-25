@@ -23,8 +23,12 @@ async function signInWithGoogle() {
     // Load Google Identity Services
     await loadGoogleIdentity();
     
+    // Get client ID from server
+    const configResponse = await fetch('/api/config');
+    const config = await configResponse.json();
+    
     const client = google.accounts.oauth2.initTokenClient({
-      client_id: 'YOUR_GOOGLE_CLIENT_ID', // This will be provided by the server
+      client_id: config.googleClientId,
       scope: 'openid email profile',
       callback: async (response) => {
         if (response.access_token) {
