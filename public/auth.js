@@ -127,6 +127,7 @@ function showUserInfo(user) {
   const loginBtn = document.getElementById('loginBtn');
   const userPicture = document.getElementById('userPicture');
   const userName = document.getElementById('userName');
+  const landingOverlay = document.getElementById('landingOverlay');
   
   if (userInfo && loginBtn && userPicture && userName) {
     userPicture.src = user.picture || '/default-avatar.png';
@@ -134,16 +135,27 @@ function showUserInfo(user) {
     userInfo.classList.remove('hidden');
     loginBtn.classList.add('hidden');
   }
+  
+  // Hide landing overlay when user is authenticated
+  if (landingOverlay) {
+    landingOverlay.style.display = 'none';
+  }
 }
 
 // Show login button
 function showLoginButton() {
   const userInfo = document.getElementById('userInfo');
   const loginBtn = document.getElementById('loginBtn');
+  const landingOverlay = document.getElementById('landingOverlay');
   
   if (userInfo && loginBtn) {
     userInfo.classList.add('hidden');
     loginBtn.classList.remove('hidden');
+  }
+  
+  // Show landing overlay when user is not authenticated
+  if (landingOverlay) {
+    landingOverlay.style.display = 'flex';
   }
 }
 
@@ -174,4 +186,24 @@ async function getIdToken(accessToken) {
   const response = await fetch(`https://oauth2.googleapis.com/tokeninfo?access_token=${accessToken}`);
   const data = await response.json();
   return data.id_token;
+}
+
+// Show notification
+function showNotification(message, type = 'info') {
+  // Create notification element
+  const notification = document.createElement('div');
+  notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg text-white font-semibold z-50 transform transition-all duration-300 ${
+    type === 'success' ? 'bg-green-600' :
+    type === 'error' ? 'bg-red-600' :
+    type === 'warning' ? 'bg-yellow-600' : 'bg-blue-600'
+  }`;
+  notification.textContent = message;
+  
+  // Add to page
+  document.body.appendChild(notification);
+  
+  // Remove after 3 seconds
+  setTimeout(() => {
+    notification.remove();
+  }, 3000);
 }
