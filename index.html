@@ -18,6 +18,19 @@
   <div class="max-w-6xl mx-auto p-4 space-y-6">
     <!-- Header -->
     <header class="text-center space-y-2">
+      <div class="flex justify-between items-center mb-4">
+        <div></div> <!-- Spacer -->
+        <div id="auth-section" class="flex items-center space-x-4">
+          <button id="loginBtn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-all hidden">
+            <i class="fab fa-google mr-2"></i>Sign in with Google
+          </button>
+          <div id="userInfo" class="flex items-center space-x-3 hidden">
+            <img id="userPicture" class="w-8 h-8 rounded-full" />
+            <span id="userName" class="text-slate-300 font-medium"></span>
+            <button id="logoutBtn" class="text-red-400 hover:text-red-300 font-semibold">Logout</button>
+          </div>
+        </div>
+      </div>
       <h1 class="text-4xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
         <i class="fas fa-truck-moving mr-3"></i>Gig Worker Pay Calculator
       </h1>
@@ -535,6 +548,35 @@
       }, 3000);
     }
 
+    // Authentication functions
+    function checkAuthStatus() {
+      fetch('/auth/status')
+        .then(res => res.json())
+        .then(data => {
+          if (data.authenticated) {
+            showUserInfo(data.user);
+          } else {
+            showLoginButton();
+          }
+        })
+        .catch(err => {
+          console.error('Auth check failed:', err);
+          showLoginButton();
+        });
+    }
+
+    function showUserInfo(user) {
+      document.getElementById('userPicture').src = user.picture;
+      document.getElementById('userName').textContent = user.name;
+      document.getElementById('userInfo').classList.remove('hidden');
+      document.getElementById('loginBtn').classList.add('hidden');
+    }
+
+    function showLoginButton() {
+      document.getElementById('userInfo').classList.add('hidden');
+      document.getElementById('loginBtn').classList.remove('hidden');
+    }
+
     // Event listeners
     $("calcBtn").addEventListener("click", calc);
     $("shareBtn").addEventListener("click", shareLink);
@@ -542,8 +584,18 @@
     $("resetBtn").addEventListener("click", resetAll);
     fields.forEach(f => $(f).addEventListener("input", calc));
 
+    // Auth event listeners
+    document.getElementById('loginBtn').addEventListener('click', () => {
+      window.location.href = '/auth/google';
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      window.location.href = '/auth/logout';
+    });
+
     // Initialize
     load();
+    checkAuthStatus();
   </script>
 </body>
 </html>

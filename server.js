@@ -2,6 +2,9 @@ const express = require('express');
 const path = require('path');
 const cors = require('cors');
 const helmet = require('helmet');
+const session = require('express-session');
+const passport = require('passport');
+const sequelize = require('./config/database');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -29,17 +32,52 @@ app.use(cors());
 // Parse JSON bodies
 app.use(express.json());
 
+// Session configuration
+app.use(session({
+  secret: process.env.JWT_SECRET || 'your-secret-key',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
+}));
+
+// Initialize Passport
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Database connection
+sequelize.authenticate()
+  .then(() => {
+    console.log('✅ Database connected successfully');
+    return sequelize.sync(); // Creates tables if they don't exist
+  })
+  .then(() => {
+    console.log('✅ Database tables synchronized');
+  })
+  .catch(err => {
+    console.error('❌ Database connection failed:', err);
+  });
+
 // Serve static files
 app.use(express.static(path.join(__dirname, './')));
 
-// API routes (placeholder for future auth features)
+// Import auth routes
+const authRoutes = require('./routes/auth');
+
+// API routes
 app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'ok', 
     message: 'Gig Calculator API is running',
+    database: 'connected',
     timestamp: new Date().toISOString()
   });
 });
+
+// Auth routes
+app.use('/auth', authRoutes);
 
 // Serve the main app
 app.get('/', (req, res) => {
