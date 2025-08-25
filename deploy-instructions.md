@@ -35,15 +35,15 @@
 
 2. **Create New Web Service**:
    - Click "New +"
-   - Select "Web Service"
+   - Select "Web Service" (for authentication features)
    - Connect your GitHub repository
    - Select the `gig-calculator` repository
 
 3. **Configure the Service**:
    - **Name**: `gig-calculator` (or your preferred name)
-   - **Environment**: `Static Site`
-   - **Build Command**: Leave empty (or `echo "Static site - no build required"`)
-   - **Start Command**: Leave empty (Render will serve static files automatically)
+   - **Environment**: `Node`
+   - **Build Command**: `npm install`
+   - **Start Command**: `npm start`
    - **Plan**: Free (or choose paid if needed)
 
 4. **Deploy**:
