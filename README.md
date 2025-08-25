@@ -1,5 +1,7 @@
 # Gig Worker Pay Calculator
 
+**Powered by Hey Dispatch**
+
 A comprehensive calculator for gig workers to determine their true hourly rates after accounting for expenses like gas, wear and tear, and taxes.
 
 ## Features

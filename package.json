@@ -1,7 +1,7 @@
 {
   "name": "gig-calculator",
   "version": "1.0.0",
-  "description": "Gig Worker Pay Calculator - Calculate true hourly rates after expenses for Roadie, DoorDash, Uber, and more",
+  "description": "Gig Worker Pay Calculator - Powered by Hey Dispatch - Calculate true hourly rates after expenses for Roadie, DoorDash, Uber, and more",
   "main": "start.js",
   "scripts": {
     "start": "node start.js",

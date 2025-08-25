@@ -67,6 +67,7 @@ app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'ok', 
     message: 'Gig Calculator API is running',
+    poweredBy: 'Hey Dispatch',
     timestamp: new Date().toISOString()
   });
 });
@@ -193,6 +194,6 @@ app.get('*', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`🚛 Gig Calculator server running on port ${PORT}`);
+  console.log(`🚛 Gig Calculator (Powered by Hey Dispatch) server running on port ${PORT}`);
   console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
 });
