@@ -6,6 +6,7 @@
   <title>Gig Worker Pay Calculator - Powered by Hey Dispatch</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <link rel="preload" href="https://accounts.google.com/gsi/client" as="script">
   <script src="/auth.js"></script>
 
   <style>
@@ -116,7 +117,7 @@
             <div>
               <label class="text-sm text-slate-300 font-medium">Base Pay ($)</label>
               <input id="gross" type="number" step="0.01" min="0" class="w-full mt-1 rounded-lg bg-slate-700 ring-1 ring-white/10 p-3 text-lg" value="180" placeholder="0.00" oninput="validateNumber(this, 0)">
-              <p class="text-xs text-slate-500 mt-1">Platform base pay</p>
+              <p class="text-xs text-slate-500 mt-1">Base pay from gig</p>
             </div>
             <div>
               <label class="text-sm text-slate-300 font-medium">Tips + Bonuses ($)</label>
@@ -129,7 +130,7 @@
               <p class="text-xs text-slate-500 mt-1">Miles while actively delivering</p>
             </div>
             <div>
-              <label class="text-sm text-slate-300 font-medium">Platform Fees ($)</label>
+              <label class="text-sm text-slate-300 font-medium">Fees & Commissions ($)</label>
               <input id="fees" type="number" step="0.01" min="0" class="w-full mt-1 rounded-lg bg-slate-700 ring-1 ring-white/10 p-3 text-lg" value="0" placeholder="0.00" oninput="validateNumber(this, 0)">
               <p class="text-xs text-slate-500 mt-1">Any platform fees or commissions</p>
             </div>
@@ -719,7 +720,7 @@
         gross: parseFloat($("gross").value) || 0,
         tips: parseFloat($("tips").value) || 0,
         onTripMiles: parseFloat($("onTripMiles").value) || 0,
-        platformFees: parseFloat($("fees").value) || 0,
+        fees: parseFloat($("fees").value) || 0,
         gasPrice: parseFloat($("gas").value) || 0,
         mpg: parseFloat($("mpg").value) || 0,
         wearTear: parseFloat($("wear").value) || 0,

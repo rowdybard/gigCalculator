@@ -166,14 +166,30 @@ function showLoginButton() {
 // Load Google Identity Services
 function loadGoogleIdentity() {
   return new Promise((resolve, reject) => {
-    if (window.google) {
+    if (window.google && window.google.accounts) {
       resolve();
+      return;
+    }
+    
+    // Check if script is already loading
+    if (document.querySelector('script[src*="accounts.google.com/gsi/client"]')) {
+      const checkInterval = setInterval(() => {
+        if (window.google && window.google.accounts) {
+          clearInterval(checkInterval);
+          resolve();
+        }
+      }, 100);
       return;
     }
     
     const script = document.createElement('script');
     script.src = 'https://accounts.google.com/gsi/client';
-    script.onload = resolve;
+    script.async = true;
+    script.defer = true;
+    script.onload = () => {
+      // Wait a bit for Google to initialize
+      setTimeout(resolve, 100);
+    };
     script.onerror = reject;
     document.head.appendChild(script);
   });
