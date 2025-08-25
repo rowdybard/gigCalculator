@@ -3,11 +3,27 @@ const path = require('path');
 const cors = require('cors');
 const helmet = require('helmet');
 const session = require('express-session');
-const passport = require('passport');
-const sequelize = require('./config/database');
+const admin = require('firebase-admin');
+require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Initialize Firebase Admin with service account JSON
+let serviceAccount;
+try {
+  serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+} catch (error) {
+  console.error('Failed to parse Firebase service account JSON:', error);
+  process.exit(1);
+}
+
+// Initialize Firebase Admin
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
+
+const db = admin.firestore();
 
 // Security middleware
 app.use(helmet({
@@ -34,7 +50,7 @@ app.use(express.json());
 
 // Session configuration
 app.use(session({
-  secret: process.env.JWT_SECRET || 'your-secret-key',
+  secret: process.env.SESSION_SECRET || 'your-secret-key',
   resave: false,
   saveUninitialized: false,
   cookie: {
@@ -43,41 +59,128 @@ app.use(session({
   }
 }));
 
-// Initialize Passport
-app.use(passport.initialize());
-app.use(passport.session());
-
-// Database connection
-sequelize.authenticate()
-  .then(() => {
-    console.log('✅ Database connected successfully');
-    return sequelize.sync(); // Creates tables if they don't exist
-  })
-  .then(() => {
-    console.log('✅ Database tables synchronized');
-  })
-  .catch(err => {
-    console.error('❌ Database connection failed:', err);
-  });
-
 // Serve static files
 app.use(express.static(path.join(__dirname, './')));
 
-// Import auth routes
-const authRoutes = require('./routes/auth');
-
-// API routes
+// API Routes
 app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'ok', 
     message: 'Gig Calculator API is running',
-    database: 'connected',
     timestamp: new Date().toISOString()
   });
 });
 
-// Auth routes
-app.use('/auth', authRoutes);
+// Authentication routes
+app.post('/api/auth/google', async (req, res) => {
+  try {
+    const { idToken } = req.body;
+    
+    if (!idToken) {
+      return res.status(400).json({ error: 'No ID token provided' });
+    }
+
+    // Verify the ID token
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    
+    // Store user session
+    req.session.userId = decodedToken.uid;
+    req.session.user = {
+      uid: decodedToken.uid,
+      email: decodedToken.email,
+      name: decodedToken.name,
+      picture: decodedToken.picture
+    };
+
+    // Save user to Firestore
+    await db.collection('users').doc(decodedToken.uid).set({
+      uid: decodedToken.uid,
+      email: decodedToken.email,
+      displayName: decodedToken.name,
+      photoURL: decodedToken.picture,
+      lastSignIn: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: admin.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+
+    res.json({ 
+      success: true, 
+      user: req.session.user 
+    });
+  } catch (error) {
+    console.error('Auth error:', error);
+    res.status(401).json({ error: 'Authentication failed' });
+  }
+});
+
+app.post('/api/auth/logout', (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      return res.status(500).json({ error: 'Logout failed' });
+    }
+    res.json({ success: true });
+  });
+});
+
+app.get('/api/auth/status', (req, res) => {
+  if (req.session.user) {
+    res.json({
+      authenticated: true,
+      user: req.session.user
+    });
+  } else {
+    res.json({ authenticated: false });
+  }
+});
+
+// Save calculation
+app.post('/api/calculations', async (req, res) => {
+  try {
+    if (!req.session.user) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+
+    const calculationData = {
+      userId: req.session.user.uid,
+      ...req.body,
+      createdAt: admin.firestore.FieldValue.serverTimestamp()
+    };
+
+    const docRef = await db.collection('calculations').add(calculationData);
+    
+    res.json({ 
+      success: true, 
+      id: docRef.id 
+    });
+  } catch (error) {
+    console.error('Save calculation error:', error);
+    res.status(500).json({ error: 'Failed to save calculation' });
+  }
+});
+
+// Get user calculations
+app.get('/api/calculations', async (req, res) => {
+  try {
+    if (!req.session.user) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+
+    const snapshot = await db.collection('calculations')
+      .where('userId', '==', req.session.user.uid)
+      .orderBy('createdAt', 'desc')
+      .limit(20)
+      .get();
+
+    const calculations = [];
+    snapshot.forEach(doc => {
+      calculations.push({ id: doc.id, ...doc.data() });
+    });
+
+    res.json({ calculations });
+  } catch (error) {
+    console.error('Get calculations error:', error);
+    res.status(500).json({ error: 'Failed to get calculations' });
+  }
+});
 
 // Serve the main app
 app.get('/', (req, res) => {

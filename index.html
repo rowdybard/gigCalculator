@@ -6,11 +6,8 @@
   <title>Gig Worker Pay Calculator - Roadie & More</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-  
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+  <script src="/auth.js"></script>
+
   <style>
     .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
     .stat-card { backdrop-filter: blur(10px); }
@@ -36,7 +33,7 @@
       <h1 class="text-4xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
         <i class="fas fa-truck-moving mr-3"></i>Gig Worker Pay Calculator
       </h1>
-      <p class="text-slate-400 text-lg">Calculate your true hourly rate after expenses for Roadie, DoorDash, Uber, and more</p>
+      <p class="text-slate-400 text-lg">Calculate your true hourly rate after expenses for any gig work</p>
     </header>
 
 
@@ -115,6 +112,9 @@
         <div class="flex flex-wrap gap-3">
           <button id="calcBtn" class="px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 font-semibold transition-all">
             <i class="fas fa-calculator mr-2"></i>Calculate
+          </button>
+          <button id="scorecardBtn" class="px-6 py-3 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 font-semibold transition-all">
+            <i class="fas fa-trophy mr-2"></i>Create Scorecard
           </button>
           <button id="saveBtn" class="px-6 py-3 rounded-xl bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-500 hover:to-orange-500 font-semibold transition-all">
             <i class="fas fa-save mr-2"></i>Save
@@ -223,9 +223,40 @@
     </footer>
   </div>
 
+  <!-- Scorecard Modal -->
+  <div id="scorecardModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-slate-800 rounded-2xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-2xl font-bold text-white">Gig Scorecard</h2>
+        <button id="closeScorecard" class="text-slate-400 hover:text-white text-2xl">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      
+      <div id="scorecardContent" class="bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl p-6 border border-slate-600">
+        <!-- Scorecard will be generated here -->
+      </div>
+      
+      <div class="flex gap-3 mt-6">
+        <button id="downloadScorecard" class="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-semibold rounded-lg transition-all">
+          <i class="fas fa-download mr-2"></i>Download Image
+        </button>
+        <button id="shareScorecard" class="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-semibold rounded-lg transition-all">
+          <i class="fas fa-share-alt mr-2"></i>Share
+        </button>
+        <button id="copyScorecard" class="px-6 py-3 bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-500 hover:to-orange-500 text-white font-semibold rounded-lg transition-all">
+          <i class="fas fa-copy mr-2"></i>Copy Link
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script>
 
     const fields = ["hours","miles","gross","tips","gas","mpg","wear","fees","tax","onTripMiles"];
+    
+    // Required fields for scorecard
+    const requiredFields = ["hours", "miles", "gross", "tips", "gas", "mpg", "wear", "tax"];
 
 
 
@@ -330,26 +361,14 @@
           const val = params.get(f);
           if (val !== null) $(f).value = val;
         });
-        const platform = params.get('platform');
-        if (platform && platforms[platform]) {
-          currentPlatform = platform;
-          document.querySelectorAll('.platform-card').forEach(c => c.classList.remove('selected'));
-          document.querySelector(`[data-platform="${platform}"]`).classList.add('selected');
-        }
       } else {
         // localStorage fallback
         const saved = localStorage.getItem("gigCalc");
         if (saved) {
           const obj = JSON.parse(saved);
           fields.forEach(f => { if (obj[f] !== undefined) $(f).value = obj[f]; });
-          if (obj.platform && platforms[obj.platform]) {
-            currentPlatform = obj.platform;
-            document.querySelectorAll('.platform-card').forEach(c => c.classList.remove('selected'));
-            document.querySelector(`[data-platform="${obj.platform}"]`).classList.add('selected');
-          }
         }
       }
-      updatePlatformTips();
       calc();
     }
 
@@ -360,7 +379,6 @@
         const raw = $(f).value.trim();
         if (raw !== "") params.set(f, raw);
       });
-      params.set('platform', currentPlatform);
       const url = location.origin + location.pathname + "?" + params.toString();
       navigator.clipboard.writeText(url).then(() => {
         showNotification("Link copied to clipboard!", "success");
@@ -378,10 +396,6 @@
       fields.forEach(f => $(f).value = "");
       localStorage.removeItem("gigCalc");
       history.replaceState({}, "", location.pathname);
-      currentPlatform = 'roadie';
-      document.querySelectorAll('.platform-card').forEach(c => c.classList.remove('selected'));
-      document.querySelector('[data-platform="roadie"]').classList.add('selected');
-      updatePlatformTips();
       calc();
     }
 
@@ -397,54 +411,259 @@
       }, 3000);
     }
 
-    // Firebase Authentication
-    // Load Firebase config and auth functions
-    const script1 = document.createElement('script');
-    script1.src = 'firebase-config.js';
-    document.head.appendChild(script1);
 
-    const script2 = document.createElement('script');
-    script2.src = 'firebase-auth.js';
-    document.head.appendChild(script2);
-
-    // Wait for Firebase to load, then initialize auth
-    script2.onload = function() {
-      // Check authentication state
-      checkAuthState();
-      
-      // Auth event listeners
-      document.getElementById('loginBtn').addEventListener('click', signInWithGoogle);
-      document.getElementById('logoutBtn').addEventListener('click', signOut);
-    };
 
     // Event listeners
     $("calcBtn").addEventListener("click", calc);
+    $("scorecardBtn").addEventListener("click", createScorecard);
     $("saveBtn").addEventListener("click", saveCurrentCalculation);
     $("shareBtn").addEventListener("click", shareLink);
     $("copyBtn").addEventListener("click", copySummary);
     $("resetBtn").addEventListener("click", resetAll);
     fields.forEach(f => $(f).addEventListener("input", calc));
+    
+    // Scorecard modal listeners
+    document.getElementById('closeScorecard').addEventListener('click', closeScorecard);
+    document.getElementById('downloadScorecard').addEventListener('click', downloadScorecard);
+    document.getElementById('shareScorecard').addEventListener('click', shareScorecard);
+    document.getElementById('copyScorecard').addEventListener('click', copyScorecardLink);
+    
+    // Auth event listeners
+    document.getElementById('loginBtn').addEventListener('click', signInWithGoogle);
+    document.getElementById('logoutBtn').addEventListener('click', signOut);
+
+
+
+    // Scoring System
+    function calculateScore() {
+      const grossHourly = parseFloat($("grossHourly").textContent.replace('$', '').replace('/hr', '')) || 0;
+      const realHourly = parseFloat($("realHourly").textContent.replace('$', '').replace('/hr', '')) || 0;
+      const grossPerMile = parseFloat($("grossPerMile").textContent.replace('$', '').replace('/mi', '')) || 0;
+      const netPerMile = parseFloat($("dollarsPerMile").textContent.replace('$', '').replace('/mi', '')) || 0;
+      const netProfit = parseFloat($("netProfit").textContent.replace('$', '')) || 0;
+      
+      let score = 0;
+      let maxScore = 100;
+      let feedback = [];
+      
+      // Per-mile rate scoring (40 points)
+      if (grossPerMile >= 2.0) {
+        score += 40;
+        feedback.push("🚀 Excellent per-mile rate!");
+      } else if (grossPerMile >= 1.5) {
+        score += 30;
+        feedback.push("✅ Good per-mile rate");
+      } else if (grossPerMile >= 1.0) {
+        score += 20;
+        feedback.push("⚠️ Acceptable per-mile rate");
+      } else {
+        score += 0;
+        feedback.push("❌ Poor per-mile rate - consider better gigs");
+      }
+      
+      // Real hourly rate scoring (30 points)
+      if (realHourly >= 25) {
+        score += 30;
+        feedback.push("💰 Great hourly earnings!");
+      } else if (realHourly >= 20) {
+        score += 25;
+        feedback.push("💵 Good hourly earnings");
+      } else if (realHourly >= 15) {
+        score += 20;
+        feedback.push("📈 Decent hourly earnings");
+      } else if (realHourly >= 10) {
+        score += 10;
+        feedback.push("📉 Low hourly earnings");
+      } else {
+        score += 0;
+        feedback.push("💸 Very low hourly earnings");
+      }
+      
+      // Net profit scoring (20 points)
+      if (netProfit >= 100) {
+        score += 20;
+        feedback.push("🎯 High profit shift!");
+      } else if (netProfit >= 50) {
+        score += 15;
+        feedback.push("🎯 Good profit shift");
+      } else if (netProfit >= 20) {
+        score += 10;
+        feedback.push("📊 Decent profit");
+      } else if (netProfit >= 0) {
+        score += 5;
+        feedback.push("⚖️ Break-even shift");
+      } else {
+        score += 0;
+        feedback.push("💸 Loss-making shift");
+      }
+      
+      // Efficiency bonus (10 points)
+      const efficiency = grossHourly / realHourly;
+      if (efficiency <= 1.2) {
+        score += 10;
+        feedback.push("⚡ Very efficient!");
+      } else if (efficiency <= 1.4) {
+        score += 7;
+        feedback.push("⚡ Efficient operation");
+      } else if (efficiency <= 1.6) {
+        score += 4;
+        feedback.push("📊 Average efficiency");
+      } else {
+        score += 0;
+        feedback.push("📉 High cost ratio");
+      }
+      
+      return {
+        score: Math.min(score, maxScore),
+        maxScore: maxScore,
+        feedback: feedback,
+        grade: getGrade(score),
+        color: getScoreColor(score)
+      };
+    }
+    
+    function getGrade(score) {
+      if (score >= 90) return "A+";
+      if (score >= 80) return "A";
+      if (score >= 70) return "B+";
+      if (score >= 60) return "B";
+      if (score >= 50) return "C+";
+      if (score >= 40) return "C";
+      if (score >= 30) return "D";
+      return "F";
+    }
+    
+    function getScoreColor(score) {
+      if (score >= 80) return "text-green-400";
+      if (score >= 60) return "text-yellow-400";
+      if (score >= 40) return "text-orange-400";
+      return "text-red-400";
+    }
+    
+    // Scorecard Functions
+    function createScorecard() {
+      // Check if required fields are filled
+      const missingFields = requiredFields.filter(field => !$(field).value || $(field).value.trim() === '');
+      
+      if (missingFields.length > 0) {
+        showNotification('Please fill in all required fields to create a scorecard', 'warning');
+        return;
+      }
+      
+      // Calculate first to get updated results
+      calc();
+      
+      const scoreData = calculateScore();
+      const scorecardHTML = generateScorecardHTML(scoreData);
+      
+      document.getElementById('scorecardContent').innerHTML = scorecardHTML;
+      document.getElementById('scorecardModal').classList.remove('hidden');
+    }
+    
+    function generateScorecardHTML(scoreData) {
+      const grossHourly = $("grossHourly").textContent;
+      const realHourly = $("realHourly").textContent;
+      const netProfit = $("netProfit").textContent;
+      const grossPerMile = $("grossPerMile").textContent;
+      const netPerMile = $("dollarsPerMile").textContent;
+      const hours = $("hours").value;
+      const miles = $("miles").value;
+      
+      return `
+        <div class="text-center space-y-6">
+          <!-- Header -->
+          <div class="space-y-2">
+            <h1 class="text-3xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+              🚛 Gig Scorecard
+            </h1>
+            <p class="text-slate-400">Performance Report</p>
+          </div>
+          
+          <!-- Score Display -->
+          <div class="bg-gradient-to-br from-slate-800 to-slate-700 rounded-2xl p-6 border border-slate-600">
+            <div class="text-6xl font-bold ${scoreData.color} mb-2">${scoreData.score}</div>
+            <div class="text-2xl font-semibold text-slate-300 mb-1">${scoreData.grade}</div>
+            <div class="text-slate-400">out of ${scoreData.maxScore}</div>
+          </div>
+          
+          <!-- Key Metrics -->
+          <div class="grid grid-cols-2 gap-4">
+            <div class="bg-slate-800 rounded-xl p-4 border border-slate-600">
+              <div class="text-sm text-slate-400">Real Hourly</div>
+              <div class="text-xl font-bold text-blue-400">${realHourly}</div>
+            </div>
+            <div class="bg-slate-800 rounded-xl p-4 border border-slate-600">
+              <div class="text-sm text-slate-400">Net Profit</div>
+              <div class="text-xl font-bold text-green-400">${netProfit}</div>
+            </div>
+            <div class="bg-slate-800 rounded-xl p-4 border border-slate-600">
+              <div class="text-sm text-slate-400">Per Mile (Net)</div>
+              <div class="text-xl font-bold text-purple-400">${netPerMile}</div>
+            </div>
+            <div class="bg-slate-800 rounded-xl p-4 border border-slate-600">
+              <div class="text-sm text-slate-400">Hours Worked</div>
+              <div class="text-xl font-bold text-yellow-400">${hours}h</div>
+            </div>
+          </div>
+          
+          <!-- Feedback -->
+          <div class="bg-slate-800 rounded-xl p-4 border border-slate-600">
+            <h3 class="text-lg font-semibold text-white mb-3">Performance Feedback</h3>
+            <div class="space-y-2">
+              ${scoreData.feedback.map(feedback => `<div class="text-slate-300">${feedback}</div>`).join('')}
+            </div>
+          </div>
+          
+          <!-- Footer -->
+          <div class="text-xs text-slate-500">
+            Generated by Gig Calculator • ${new Date().toLocaleDateString()}
+          </div>
+        </div>
+      `;
+    }
+    
+    function closeScorecard() {
+      document.getElementById('scorecardModal').classList.add('hidden');
+    }
+    
+    function downloadScorecard() {
+      // This would require html2canvas library for image generation
+      showNotification('Download feature coming soon!', 'info');
+    }
+    
+    function shareScorecard() {
+      if (navigator.share) {
+        navigator.share({
+          title: 'My Gig Scorecard',
+          text: `I scored ${calculateScore().score}/100 on my gig shift! Check out my performance.`,
+          url: window.location.href
+        });
+      } else {
+        copyScorecardLink();
+      }
+    }
+    
+    function copyScorecardLink() {
+      const url = window.location.href;
+      navigator.clipboard.writeText(url).then(() => {
+        showNotification('Scorecard link copied to clipboard!', 'success');
+      });
+    }
 
     // Save current calculation
     function saveCurrentCalculation() {
-      const currentUser = getCurrentUser();
-      if (!currentUser) {
-        showNotification('Please sign in to save calculations', 'warning');
-        return;
-      }
-
       // Get current calculation data
       const calculationData = {
         hours: parseFloat($("hours").value) || 0,
         miles: parseFloat($("miles").value) || 0,
-        basePay: parseFloat($("basePay").value) || 0,
+        basePay: parseFloat($("gross").value) || 0,
         tips: parseFloat($("tips").value) || 0,
         onTripMiles: parseFloat($("onTripMiles").value) || 0,
-        platformFees: parseFloat($("platformFees").value) || 0,
-        gasPrice: parseFloat($("gasPrice").value) || 0,
+        platformFees: parseFloat($("fees").value) || 0,
+        gasPrice: parseFloat($("gas").value) || 0,
         mpg: parseFloat($("mpg").value) || 0,
-        wearTear: parseFloat($("wearTear").value) || 0,
-        taxRate: parseFloat($("taxRate").value) || 0,
+        wearTear: parseFloat($("wear").value) || 0,
+        taxRate: parseFloat($("tax").value) || 0,
         grossHourly: parseFloat($("grossHourly").textContent.replace('$', '').replace('/hr', '')) || 0,
         realHourly: parseFloat($("realHourly").textContent.replace('$', '').replace('/hr', '')) || 0,
         netProfit: parseFloat($("netProfit").textContent.replace('$', '')) || 0,
@@ -456,6 +675,7 @@
 
     // Initialize
     load();
+    checkAuthStatus();
   </script>
 </body>
 </html>

@@ -1,87 +1,140 @@
-# 🚛 Gig Worker Pay Calculator
+# Gig Worker Pay Calculator
 
-A comprehensive calculator to help gig workers (especially Roadie drivers) calculate their true hourly rate after all expenses including gas, wear & tear, taxes, and platform fees.
+A comprehensive calculator for gig workers to determine their true hourly rates after accounting for expenses like gas, wear and tear, and taxes.
 
-## ✨ Features
+## Features
 
-- **Multi-Platform Support**: Roadie, DoorDash, Uber, Amazon Flex, Instacart, GrubHub, Lyft, and Custom
-- **Real-Time Calculations**: See your true hourly rate as you type
-- **Detailed Cost Breakdown**: Fuel, wear & tear, taxes, and platform fees
-- **Per-Mile Analysis**: Gross and net earnings per mile (all miles + on-trip miles)
-- **Platform-Specific Tips**: Optimized advice for each gig platform
-- **Share & Save**: Share links with your data or save locally
-- **Mobile Responsive**: Works perfectly on phones and tablets
+- **Real-time calculations** for gross and net hourly rates
+- **Expense tracking** including fuel costs, vehicle wear & tear, and taxes
+- **Per-mile rate analysis** for both total miles and on-trip miles
+- **Scorecard generation** with social media sharing
+- **Google authentication** for saving calculations
+- **Firebase integration** for secure data storage
 
-## 🚀 Quick Start
+## Tech Stack
 
-### Local Development
-1. Clone this repository
-2. Open `index.html` in your browser
-3. Or run: `npm run dev`
+- **Frontend**: HTML5, CSS3 (Tailwind), Vanilla JavaScript
+- **Backend**: Node.js, Express.js
+- **Authentication**: Google OAuth 2.0
+- **Database**: Firebase Firestore
+- **Hosting**: Render (Web Service)
 
-### Deploy to Render
+## Setup Instructions
+
+### 1. Firebase Setup
+
+1. Go to [Firebase Console](https://console.firebase.google.com/)
+2. Create a new project or select existing one
+3. Enable Authentication:
+   - Go to Authentication > Sign-in method
+   - Enable Google provider
+   - Add your domain to authorized domains
+4. Enable Firestore Database:
+   - Go to Firestore Database
+   - Create database in production mode
+   - Set up security rules (see below)
+5. Create Service Account:
+   - Go to Project Settings > Service Accounts
+   - Click "Generate new private key"
+   - Download the JSON file
+
+### 2. Environment Variables
+
+1. Copy `env.example` to `.env`
+2. Get your Firebase service account JSON:
+   - Go to Firebase Console > Project Settings > Service Accounts
+   - Click "Generate new private key"
+   - Download the JSON file
+3. Copy the entire JSON content into the `FIREBASE_SERVICE_ACCOUNT` variable:
+
+```env
+FIREBASE_SERVICE_ACCOUNT={"type":"service_account","project_id":"your-project-id","private_key_id":"your-private-key-id","private_key":"-----BEGIN PRIVATE KEY-----\nYour private key here\n-----END PRIVATE KEY-----\n","client_email":"your-service-account@your-project.iam.gserviceaccount.com","client_id":"your-client-id","auth_uri":"https://accounts.google.com/o/oauth2/auth","token_uri":"https://oauth2.googleapis.com/token","auth_provider_x509_cert_url":"https://www.googleapis.com/oauth2/v1/certs","client_x509_cert_url":"https://www.googleapis.com/robot/v1/metadata/x509/your-service-account%40your-project.iam.gserviceaccount.com"}
+SESSION_SECRET=your-session-secret-key
+NODE_ENV=production
+PORT=3000
+```
+
+### 3. Firebase Security Rules
+
+Set up Firestore security rules:
+
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users can only access their own data
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Users can only access their own calculations
+    match /calculations/{calculationId} {
+      allow read, write: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+  }
+}
+```
+
+### 4. Local Development
+
+1. Install dependencies:
+```bash
+npm install
+```
+
+2. Start the server:
+```bash
+npm start
+```
+
+3. Open http://localhost:3000
+
+### 5. Deployment on Render
+
 1. Push your code to GitHub
-2. Connect your repository to Render
-3. Deploy as a Static Site
+2. Create a new Web Service on Render
+3. Connect your GitHub repository
+4. Set environment variables in Render dashboard
+5. Deploy
 
-## 📊 What It Calculates
+## API Endpoints
 
-- **Gross Hourly Rate**: Total earnings ÷ hours worked
-- **Real Hourly Rate**: Net profit ÷ hours worked (after all costs)
-- **Net Profit**: Gross earnings minus all expenses and taxes
-- **Cost Breakdown**: Detailed view of fuel, wear & tear, taxes, and fees
-- **Per-Mile Rates**: Both gross and net earnings per mile driven
-- **Target Analysis**: Break-even rates and required gross for target hourly rates
+- `GET /api/health` - Health check
+- `POST /api/auth/google` - Google authentication
+- `POST /api/auth/logout` - Logout
+- `GET /api/auth/status` - Check authentication status
+- `POST /api/calculations` - Save calculation
+- `GET /api/calculations` - Get user calculations
 
-## 🛠️ Technologies Used
+## File Structure
 
-- **HTML5**: Semantic markup
-- **CSS3**: Modern styling with Tailwind CSS
-- **JavaScript**: Vanilla JS for calculations and interactivity
-- **Font Awesome**: Icons
-- **Tailwind CSS**: Utility-first CSS framework
+```
+├── index.html          # Main application
+├── server.js           # Express server
+├── public/
+│   └── auth.js         # Client-side auth functions
+├── package.json        # Dependencies
+├── env.example         # Environment variables template
+└── README.md           # This file
+```
 
-## 📱 Platform-Specific Features
+## Security Features
 
-### Roadie (Default)
-- Higher wear & tear defaults (0.67/mile) for larger vehicles
-- Tips for longer hauls and furniture moves
-- Vehicle size considerations
+- Firebase Admin SDK for server-side operations
+- Environment variables for sensitive data
+- Helmet.js for security headers
+- CORS protection
+- Session-based authentication
+- Firestore security rules
 
-### Other Platforms
-- Optimized defaults for each platform type
-- Platform-specific tips and strategies
-- Appropriate wear & tear rates
+## Contributing
 
-## 🔧 Customization
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
 
-You can easily customize:
-- Platform defaults and tips
-- Wear & tear rates
-- Tax rates
-- Target hourly rates
-- UI colors and styling
+## License
 
-## 📄 License
-
-MIT License - feel free to use and modify for your needs.
-
-## 🤝 Contributing
-
-This calculator is built for gig workers by gig workers. Feel free to:
-- Report bugs
-- Suggest new features
-- Add new platforms
-- Improve calculations
-
-## 💡 Tips for Gig Workers
-
-- **Track Everything**: Log all miles, hours, and earnings
-- **Know Your Costs**: Understand your vehicle's true operating costs
-- **Compare Platforms**: Use this calculator to compare different gig opportunities
-- **Plan for Taxes**: Set aside money for self-employment taxes
-- **Optimize Routes**: Minimize deadhead miles when possible
-
----
-
-Built with ❤️ for the gig economy community 💪
+MIT License
