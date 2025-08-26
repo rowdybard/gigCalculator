@@ -15,8 +15,8 @@
   </style>
 </head>
 <body class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-100 min-h-screen">
-    <!-- Landing Page Overlay -->
-    <div id="landingOverlay" class="fixed inset-0 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 z-50 flex items-center justify-center">
+    <!-- Login Page -->
+    <div id="loginPage" class="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
       <div class="text-center max-w-md mx-auto px-6">
         <!-- Logo/Icon -->
         <div class="mb-8">
@@ -28,12 +28,12 @@
           <p class="text-slate-500 text-sm mt-2">Powered by Hey Dispatch</p>
         </div>
 
-        <!-- Auth Section -->
+        <!-- Login Section -->
         <div class="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 border border-slate-700/50">
           <h2 class="text-2xl font-semibold mb-6">Welcome!</h2>
           <p class="text-slate-300 mb-8">Sign in to start calculating your gig earnings and save your calculations.</p>
           
-          <button id="landingLoginBtn" class="w-full px-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl font-semibold text-lg transition-all transform hover:scale-105 shadow-lg">
+          <button id="loginBtn" class="w-full px-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl font-semibold text-lg transition-all transform hover:scale-105 shadow-lg">
             <i class="fab fa-google mr-3"></i>Continue with Google
           </button>
           
@@ -64,15 +64,12 @@
       </div>
     </div>
 
-  <div class="max-w-6xl mx-auto p-4 space-y-6">
+  <div id="mainContent" class="max-w-6xl mx-auto p-4 space-y-6 hidden">
     <!-- Header -->
     <header class="text-center space-y-2">
       <div class="flex justify-between items-center mb-4">
         <div></div> <!-- Spacer -->
         <div id="auth-section" class="flex items-center space-x-4">
-          <button id="loginBtn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-all hidden">
-            <i class="fab fa-google mr-2"></i>Sign in with Google
-          </button>
           <div id="userInfo" class="flex items-center space-x-3 hidden">
             <img id="userPicture" class="w-8 h-8 rounded-full" />
             <span id="userName" class="text-slate-300 font-medium"></span>

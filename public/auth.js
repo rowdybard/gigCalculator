@@ -128,10 +128,16 @@ async function loadUserCalculations() {
 
 // Show user information in UI
 function showUserInfo(user) {
-  // Simple approach: just hide the landing overlay
-  const landingOverlay = document.getElementById('landingOverlay');
-  if (landingOverlay) {
-    landingOverlay.style.display = 'none';
+  // Hide login page and show main content
+  const loginPage = document.getElementById('loginPage');
+  const mainContent = document.getElementById('mainContent');
+  
+  if (loginPage) {
+    loginPage.style.display = 'none';
+  }
+  
+  if (mainContent) {
+    mainContent.classList.remove('hidden');
   }
   
   // Update user info if elements exist
@@ -150,18 +156,25 @@ function showUserInfo(user) {
 
 // Show login button
 function showLoginButton() {
+  // Show login page and hide main content
+  const loginPage = document.getElementById('loginPage');
+  const mainContent = document.getElementById('mainContent');
+  
+  if (loginPage) {
+    loginPage.style.display = 'flex';
+  }
+  
+  if (mainContent) {
+    mainContent.classList.add('hidden');
+  }
+  
+  // Update user info if elements exist
   const userInfo = document.getElementById('userInfo');
   const loginBtn = document.getElementById('loginBtn');
-  const landingOverlay = document.getElementById('landingOverlay');
   
   if (userInfo && loginBtn) {
     userInfo.classList.add('hidden');
     loginBtn.classList.remove('hidden');
-  }
-  
-  // Show landing overlay when user is not authenticated
-  if (landingOverlay) {
-    landingOverlay.style.display = 'flex';
   }
 }
 
