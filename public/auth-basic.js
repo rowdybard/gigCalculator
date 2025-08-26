@@ -32,10 +32,15 @@ function signOut() {
 
 // Check auth status
 function checkAuthStatus() {
+  console.log('Checking auth status...');
+  console.log('Current URL:', window.location.href);
+  
   // Check if we're returning from OAuth with session token
   const urlParams = new URLSearchParams(window.location.search);
   const sessionToken = urlParams.get('session');
   const error = urlParams.get('error');
+  
+  console.log('URL params - session:', sessionToken ? 'YES' : 'NO', 'error:', error || 'NONE');
   
   if (error) {
     console.error('Auth error:', error);
@@ -47,6 +52,7 @@ function checkAuthStatus() {
   
   if (sessionToken) {
     console.log('Session token received, storing...');
+    console.log('Session token length:', sessionToken.length);
     localStorage.setItem('sessionToken', sessionToken);
     // Clean up URL
     window.history.replaceState({}, document.title, window.location.pathname);
@@ -55,6 +61,7 @@ function checkAuthStatus() {
   } else {
     // Check if user is already signed in
     const storedToken = localStorage.getItem('sessionToken');
+    console.log('Stored token in localStorage:', storedToken ? 'YES' : 'NO');
     if (storedToken) {
       console.log('Session token found in localStorage');
       getUserInfo();
@@ -69,16 +76,23 @@ function checkAuthStatus() {
 async function getUserInfo() {
   try {
     const sessionToken = localStorage.getItem('sessionToken');
+    console.log('Getting user info with token:', sessionToken ? 'YES' : 'NO');
+    
     if (!sessionToken) {
+      console.log('No session token, showing login');
       showLoginButton();
       return;
     }
 
+    console.log('Making request to /api/user...');
     const response = await fetch('/api/user', {
       headers: {
         'Authorization': `Bearer ${sessionToken}`
       }
     });
+
+    console.log('Response status:', response.status);
+    console.log('Response ok:', response.ok);
 
     if (response.ok) {
       const user = await response.json();
@@ -86,7 +100,8 @@ async function getUserInfo() {
       localStorage.setItem('user', JSON.stringify(user));
       showUserInfo(user);
     } else {
-      console.log('Session expired or invalid');
+      const errorText = await response.text();
+      console.log('Session expired or invalid. Response:', errorText);
       localStorage.removeItem('sessionToken');
       localStorage.removeItem('user');
       showLoginButton();

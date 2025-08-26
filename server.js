@@ -94,11 +94,16 @@ app.get('/api/health', (req, res) => {
 app.get('/api/auth/google/callback', async (req, res) => {
   const { code } = req.query;
   
+  console.log('OAuth callback received with code:', code ? 'YES' : 'NO');
+  
   if (!code) {
+    console.error('No code received in OAuth callback');
     return res.redirect('/?error=no_code');
   }
 
   try {
+    console.log('Exchanging code for tokens...');
+    
     // Exchange code for tokens
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
@@ -115,12 +120,15 @@ app.get('/api/auth/google/callback', async (req, res) => {
     });
 
     const tokens = await tokenResponse.json();
+    console.log('Token response received:', tokens.error ? 'ERROR' : 'SUCCESS');
 
     if (tokens.error) {
       console.error('Token exchange error:', tokens);
       return res.redirect('/?error=token_exchange_failed');
     }
 
+    console.log('Getting user info from Google...');
+    
     // Get user info from Google
     const userResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
       headers: {
@@ -129,6 +137,7 @@ app.get('/api/auth/google/callback', async (req, res) => {
     });
 
     const userData = await userResponse.json();
+    console.log('User data received:', userData.email);
 
     // Find or create user in database
     let user = await pool.query(
@@ -137,12 +146,14 @@ app.get('/api/auth/google/callback', async (req, res) => {
     );
 
     if (user.rows.length === 0) {
+      console.log('Creating new user...');
       // Create new user
       user = await pool.query(
         'INSERT INTO users (google_id, email, name, picture_url) VALUES ($1, $2, $3, $4) RETURNING *',
         [userData.id, userData.email, userData.name, userData.picture]
       );
     } else {
+      console.log('Updating existing user...');
       // Update existing user
       user = await pool.query(
         'UPDATE users SET email = $1, name = $2, picture_url = $3, updated_at = CURRENT_TIMESTAMP WHERE google_id = $4 RETURNING *',
@@ -156,6 +167,9 @@ app.get('/api/auth/google/callback', async (req, res) => {
       email: user.rows[0].email,
       exp: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 days
     })).toString('base64');
+
+    console.log('Session token created, redirecting to app...');
+    console.log('Redirect URL:', `/?session=${sessionToken}`);
 
     // Redirect to app with session token
     res.redirect(`/?session=${sessionToken}`);
