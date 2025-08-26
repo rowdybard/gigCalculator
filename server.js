@@ -37,6 +37,10 @@ app.use(express.static(path.join(__dirname, './')));
 // Database initialization
 async function initDatabase() {
   try {
+    // Drop existing tables if they exist (to fix schema issues)
+    await pool.query('DROP TABLE IF EXISTS calculations CASCADE');
+    await pool.query('DROP TABLE IF EXISTS users CASCADE');
+    
     // Create users table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS users (
@@ -83,11 +87,21 @@ initDatabase();
 // Test OAuth URL
 app.get('/api/test-oauth', (req, res) => {
   const redirectUri = process.env.NODE_ENV === 'production' ? `https://${req.get('host')}` : `${req.protocol}://${req.get('host')}`;
+  const oauthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=openid%20email%20profile&access_type=offline`;
+  
+  console.log('=== OAuth URL Debug ===');
+  console.log('Host:', req.get('host'));
+  console.log('Protocol:', req.protocol);
+  console.log('NODE_ENV:', process.env.NODE_ENV);
+  console.log('Redirect URI:', redirectUri);
+  console.log('Full OAuth URL:', oauthUrl);
+  console.log('======================');
+  
   res.json({
     redirectUri,
     clientId: process.env.GOOGLE_CLIENT_ID,
     hasClientSecret: !!process.env.GOOGLE_CLIENT_SECRET,
-    oauthUrl: `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=openid%20email%20profile&access_type=offline`
+    oauthUrl: oauthUrl
   });
 });
 
