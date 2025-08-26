@@ -858,7 +858,7 @@
           <div class="bg-slate-800 rounded-xl p-4 border border-slate-600">
             <h3 class="text-lg font-semibold text-white mb-3">Performance Feedback</h3>
             <div class="space-y-2">
-              ${scoreData.feedback.map(feedback => `<div class="text-slate-300">${feedback}</div>`).join('')}
+              ${scoreData.feedback.map(feedback => ('<div class="text-slate-300">' + feedback + '</div>')).join('')}
             </div>
           </div>
           
@@ -1638,7 +1638,7 @@
               </div>
               
               <div>
-                <button onclick="deleteCalculation(${actualIndex})" class="px-4 py-2 bg-red-600/80 hover:bg-red-600 rounded-lg text-sm font-medium text-white transition-all">
+                <button class="delete-btn px-4 py-2 bg-red-600/80 hover:bg-red-600 rounded-lg text-sm font-medium text-white transition-all">
                   <i class="fas fa-trash mr-1"></i>Delete
                 </button>
               </div>
@@ -1647,6 +1647,12 @@
         `;
         
         calculationsList.appendChild(calcElement);
+
+        // Wire delete button without inline JS to avoid template literal parsing issues
+        const deleteBtn = calcElement.querySelector('.delete-btn');
+        if (deleteBtn) {
+          deleteBtn.addEventListener('click', () => deleteCalculation(actualIndex));
+        }
       });
       
       // Store calculations for loading
