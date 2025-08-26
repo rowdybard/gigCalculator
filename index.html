@@ -497,7 +497,8 @@
     function showNotification(message, type = "info") {
       const notification = document.createElement('div');
       notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg text-white font-semibold z-50 ${
-        type === 'success' ? 'bg-green-600' : 'bg-blue-600'
+        type === 'success' ? 'bg-green-600' : 
+        type === 'error' ? 'bg-red-600' : 'bg-blue-600'
       }`;
       notification.textContent = message;
       document.body.appendChild(notification);
@@ -761,46 +762,94 @@
       });
     }
 
-    // Save current calculation
+    // Save current calculation to database
     async function saveCurrentCalculation() {
-      // Get current calculation data
-      const calculationData = {
-        gross_hourly: parseFloat($("grossHourly").textContent.replace('$', '').replace('/hr', '')) || 0,
-        net_hourly: parseFloat($("realHourly").textContent.replace('$', '').replace('/hr', '')) || 0,
-        fuel_cost: parseFloat($("fuelCost").textContent.replace('$', '')) || 0,
-        wear_tear_cost: parseFloat($("wear").value) || 0,
-        tax_rate: parseFloat($("tax").value) || 0,
-        gross_per_mile: parseFloat($("grossPerMile").textContent.replace('$', '').replace('/mi', '')) || 0,
-        net_per_mile: parseFloat($("dollarsPerMile").textContent.replace('$', '').replace('/mi', '')) || 0,
-        gross_per_mile_all: parseFloat($("activeGrossDpm").textContent.replace('$', '').replace('/mi', '')) || 0,
-        net_per_mile_all: parseFloat($("activeDpm").textContent.replace('$', '').replace('/mi', '')) || 0,
-        score: calculateScore().score || 0
-      };
-
-      // Try to save to database first, fallback to localStorage
-      if (typeof saveCalculation === 'function') {
-        const saved = await saveCalculation(calculationData);
-        if (saved) {
-          console.log('Calculation saved to database');
-        } else {
-          // Fallback to localStorage
-          saveToLocalStorage(calculationData);
+      try {
+        // Check authentication first
+        const authResponse = await fetch('/api/auth/status');
+        const authData = await authResponse.json();
+        
+        if (!authData.authenticated) {
+          showNotification('Please sign in to save calculations', 'error');
+          return;
         }
-      } else {
-        // Fallback to localStorage
-        saveToLocalStorage(calculationData);
-      }
-    }
 
-    // Save to localStorage (fallback)
-    function saveToLocalStorage(calculationData) {
-      const savedCalculations = JSON.parse(localStorage.getItem('calculations') || '[]');
-      savedCalculations.push({
-        ...calculationData,
-        timestamp: new Date().toISOString()
-      });
-      localStorage.setItem('calculations', JSON.stringify(savedCalculations));
-      showNotification('Calculation saved locally', 'success');
+        // Get input values
+        const v = read();
+        
+        // Get calculated values from UI
+        const grossHourly = parseFloat($("grossHourly").textContent.replace('$', '').replace('/hr', '')) || 0;
+        const netHourly = parseFloat($("realHourly").textContent.replace('$', '').replace('/hr', '')) || 0;
+        const fuelCost = parseFloat($("fuelCost").textContent.replace('$', '')) || 0;
+        const vehicleCost = parseFloat($("vehicleCost").textContent.replace('$', '')) || 0;
+        const estTax = parseFloat($("estTax").textContent.replace('$', '')) || 0;
+        const grossPerMile = parseFloat($("grossPerMile").textContent.replace('$', '').replace('/mi', '')) || 0;
+        const netPerMile = parseFloat($("dollarsPerMile").textContent.replace('$', '').replace('/mi', '')) || 0;
+        const grossPerMileAll = parseFloat($("activeGrossDpm").textContent.replace('$', '').replace('/mi', '')) || 0;
+        const netPerMileAll = parseFloat($("activeDpm").textContent.replace('$', '').replace('/mi', '')) || 0;
+        const scoreData = calculateScore();
+
+        // Prepare calculation data for database
+        const calculationData = {
+          // Input data
+          miles_driven: parseFloat(v.miles) || 0,
+          trip_miles: parseFloat(v.onTripMiles) || 0,
+          time_hours: parseFloat(v.hours) || 0,
+          total_earnings: (parseFloat(v.gross) || 0) + (parseFloat(v.tips) || 0),
+          gas_price: parseFloat(v.gas) || 0,
+          mpg: parseFloat(v.mpg) || 0,
+          wear_tear_rate: parseFloat(v.wear) || 0.67,
+          tax_rate: parseFloat(v.tax) || 0,
+          
+          // Calculated results
+          gross_hourly: grossHourly,
+          net_hourly: netHourly,
+          fuel_cost: fuelCost,
+          wear_tear_cost: vehicleCost,
+          estimated_tax: estTax,
+          gross_per_mile: grossPerMile,
+          net_per_mile: netPerMile,
+          gross_per_mile_all: grossPerMileAll,
+          net_per_mile_all: netPerMileAll,
+          
+          // Scorecard data
+          score: scoreData.score || 0,
+          score_grade: scoreData.grade || 'F',
+          
+          // Metadata
+          notes: '' // Could add a notes field to UI later
+        };
+
+        console.log('💾 Saving calculation to database:', calculationData);
+
+        // Save to database via API
+        const response = await fetch('/api/calculations', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(calculationData)
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          console.log('✅ Calculation saved successfully:', result.calculation.id);
+          showNotification('Calculation saved to your account!', 'success');
+          
+          // Refresh the saved calculations display
+          setTimeout(() => {
+            loadSavedCalculations();
+          }, 500);
+        } else {
+          const error = await response.json();
+          console.error('❌ Failed to save calculation:', error);
+          showNotification('Failed to save calculation: ' + (error.error || 'Unknown error'), 'error');
+        }
+
+      } catch (error) {
+        console.error('❌ Error saving calculation:', error);
+        showNotification('Error saving calculation. Please try again.', 'error');
+      }
     }
 
     // Number validation function
@@ -919,30 +968,30 @@
       try {
         let calculations = [];
         
-        console.log('🔍 Checking for getUserCalculations function:', typeof getUserCalculations);
+        console.log('🔍 Loading calculations from database...');
         
-        // Try to get from database first (get all, not just 10)
-        if (typeof getUserCalculations === 'function') {
-          console.log('📡 Fetching from database...');
-          calculations = await getUserCalculations(50); // Get more for pagination
-          console.log('📊 Database calculations:', calculations.length);
-        }
+        // Check if user is authenticated first
+        const authResponse = await fetch('/api/auth/status');
+        const authData = await authResponse.json();
         
-        // Fallback to localStorage if no database or no auth
-        if (calculations.length === 0) {
-          console.log('💾 Checking localStorage...');
-          const saved = localStorage.getItem('calculations');
-          if (saved) {
-            const parsed = JSON.parse(saved);
-            calculations = parsed; // Get all from localStorage
-            console.log('💾 LocalStorage calculations:', calculations.length);
+        if (authData.authenticated) {
+          console.log('📡 Fetching from database for user:', authData.user.email);
+          
+          // Fetch from database API
+          const response = await fetch('/api/calculations?limit=50');
+          if (response.ok) {
+            const data = await response.json();
+            calculations = data.calculations || [];
+            console.log('📊 Database calculations:', calculations.length);
           } else {
-            console.log('💾 No localStorage calculations found');
+            console.error('❌ Failed to fetch calculations from database');
           }
+        } else {
+          console.log('❌ User not authenticated, cannot load calculations');
         }
         
-        // Store all calculations globally
-        allCalculations = calculations.reverse(); // Most recent first
+        // Store all calculations globally (database returns newest first)
+        allCalculations = calculations;
         currentPage = 1;
         
         // Hide loading
