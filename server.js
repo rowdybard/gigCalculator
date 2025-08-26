@@ -18,17 +18,12 @@ const pool = new Pool({
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
-// Database initialization
+// Database initialization (idempotent - no data loss)
 async function initDatabase() {
   try {
-    // Drop and recreate users table to ensure correct schema
-    await pool.query('DROP TABLE IF EXISTS calculations CASCADE');
-    await pool.query('DROP TABLE IF EXISTS user_preferences CASCADE');
-    await pool.query('DROP TABLE IF EXISTS users CASCADE');
-    
-    // Create users table with comprehensive fields
+    // Users table
     await pool.query(`
-      CREATE TABLE users (
+      CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
         google_id VARCHAR(255) UNIQUE NOT NULL,
         email VARCHAR(255) UNIQUE NOT NULL,
@@ -43,30 +38,36 @@ async function initDatabase() {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
+    // Ensure expected columns exist (safe for repeated runs)
+    await pool.query(`
+      ALTER TABLE users
+        ADD COLUMN IF NOT EXISTS given_name VARCHAR(255),
+        ADD COLUMN IF NOT EXISTS family_name VARCHAR(255),
+        ADD COLUMN IF NOT EXISTS picture_url TEXT,
+        ADD COLUMN IF NOT EXISTS verified_email BOOLEAN DEFAULT false,
+        ADD COLUMN IF NOT EXISTS locale VARCHAR(10),
+        ADD COLUMN IF NOT EXISTS last_login TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+    `);
 
-    // Create sessions table for connect-pg-simple
+    // Sessions table for connect-pg-simple
     await pool.query(`
       CREATE TABLE IF NOT EXISTS "session" (
         "sid" varchar NOT NULL COLLATE "default",
         "sess" json NOT NULL,
         "expire" timestamp(6) NOT NULL
-      )
-      WITH (OIDS=FALSE);
-      
-      ALTER TABLE "session" DROP CONSTRAINT IF EXISTS "session_pkey";
-      ALTER TABLE "session" ADD CONSTRAINT "session_pkey" PRIMARY KEY ("sid") NOT DEFERRABLE INITIALLY IMMEDIATE;
-      
-      CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON "session" ("expire");
+      );
     `);
+    await pool.query(`ALTER TABLE "session" ADD CONSTRAINT IF NOT EXISTS session_pkey PRIMARY KEY (sid);`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON "session" ("expire");`);
 
-    // Create calculations table with enhanced tracking
+    // Calculations table
     await pool.query(`
-      CREATE TABLE calculations (
+      CREATE TABLE IF NOT EXISTS calculations (
         id SERIAL PRIMARY KEY,
         user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
         session_id VARCHAR(255),
-        
-        -- Input data
         miles_driven DECIMAL(10,2),
         trip_miles DECIMAL(10,2),
         time_hours DECIMAL(10,2),
@@ -75,8 +76,6 @@ async function initDatabase() {
         mpg DECIMAL(10,2),
         wear_tear_rate DECIMAL(10,3) DEFAULT 0.67,
         tax_rate DECIMAL(5,2) DEFAULT 0.00,
-        
-        -- Calculated results
         gross_hourly DECIMAL(10,2),
         net_hourly DECIMAL(10,2),
         fuel_cost DECIMAL(10,2),
@@ -86,22 +85,27 @@ async function initDatabase() {
         net_per_mile DECIMAL(10,2),
         gross_per_mile_all DECIMAL(10,2),
         net_per_mile_all DECIMAL(10,2),
-        
-        -- Scorecard data
         score INTEGER,
         score_grade VARCHAR(2),
-        
-        -- Metadata
         notes TEXT,
         is_favorite BOOLEAN DEFAULT false,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
-
-    // Create user preferences table
+    // Ensure expected columns exist
     await pool.query(`
-      CREATE TABLE user_preferences (
+      ALTER TABLE calculations
+        ADD COLUMN IF NOT EXISTS session_id VARCHAR(255),
+        ADD COLUMN IF NOT EXISTS notes TEXT,
+        ADD COLUMN IF NOT EXISTS is_favorite BOOLEAN DEFAULT false,
+        ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+    `);
+
+    // User preferences table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS user_preferences (
         id SERIAL PRIMARY KEY,
         user_id INTEGER REFERENCES users(id) ON DELETE CASCADE UNIQUE,
         default_mpg DECIMAL(10,2) DEFAULT 25.0,
@@ -115,7 +119,7 @@ async function initDatabase() {
       )
     `);
 
-    console.log('✅ Database schema initialized successfully');
+    console.log('✅ Database schema ensured (no destructive drops)');
   } catch (error) {
     console.error('❌ Database initialization error:', error);
     throw error;
