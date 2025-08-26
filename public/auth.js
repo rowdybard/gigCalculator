@@ -142,15 +142,13 @@ function showUserInfo(user) {
   
   // Update user info if elements exist
   const userInfo = document.getElementById('userInfo');
-  const loginBtn = document.getElementById('loginBtn');
   const userPicture = document.getElementById('userPicture');
   const userName = document.getElementById('userName');
   
-  if (userInfo && loginBtn && userPicture && userName) {
+  if (userInfo && userPicture && userName) {
     userPicture.src = user.picture || '/default-avatar.png';
     userName.textContent = user.name || 'User';
     userInfo.classList.remove('hidden');
-    loginBtn.classList.add('hidden');
   }
 }
 
@@ -170,11 +168,9 @@ function showLoginButton() {
   
   // Update user info if elements exist
   const userInfo = document.getElementById('userInfo');
-  const loginBtn = document.getElementById('loginBtn');
   
-  if (userInfo && loginBtn) {
+  if (userInfo) {
     userInfo.classList.add('hidden');
-    loginBtn.classList.remove('hidden');
   }
 }
 
