@@ -6,7 +6,13 @@
   <title>Gig Worker Pay Calculator - Powered by Hey Dispatch</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-  <script src="/auth.js"></script>
+  <!-- Temporarily removed auth.js to debug -->
+  <script>
+    console.log('🚀 PAGE STARTING TO LOAD...');
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('🎯 DOM LOADED! Page is ready!');
+    });
+  </script>
 
   <style>
     .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
@@ -1959,44 +1965,39 @@
       }
     }
 
-    // Fallback auth functions in case auth.js doesn't load
-    if (typeof signInWithGoogle === 'undefined') {
-      console.log('⚠️ signInWithGoogle not found, creating fallback');
-      window.signInWithGoogle = function() {
-        console.log('🔄 Fallback signInWithGoogle called');
-        window.location.href = '/auth/google';
-      };
-    }
+    // Simple auth functions since auth.js is disabled for debugging
+    console.log('🔧 Creating simple auth functions for debugging');
     
-    if (typeof signOut === 'undefined') {
-      console.log('⚠️ signOut not found, creating fallback');
-      window.signOut = async function() {
-        console.log('🔄 Fallback signOut called');
-        try {
-          const response = await fetch('/auth/logout', {
-            method: 'POST',
-            credentials: 'include'
-          });
-          if (response.ok) {
-            window.location.reload();
-          }
-        } catch (error) {
-          console.error('Logout error:', error);
-        }
-      };
-    }
+    window.signInWithGoogle = function() {
+      console.log('🔄 Simple signInWithGoogle called');
+      alert('Sign in function works!');
+      window.location.href = '/auth/google';
+    };
     
-    if (typeof checkAuthStatus === 'undefined') {
-      console.log('⚠️ checkAuthStatus not found, creating fallback');
-      window.checkAuthStatus = async function() {
-        console.log('🔄 Fallback checkAuthStatus called');
-        // Simple auth check - just show the calculator for now
-        const lockOverlay = document.getElementById('lockOverlay');
-        if (lockOverlay) {
-          lockOverlay.style.display = 'none';
+    window.signOut = async function() {
+      console.log('🔄 Simple signOut called');
+      try {
+        const response = await fetch('/auth/logout', {
+          method: 'POST',
+          credentials: 'include'
+        });
+        if (response.ok) {
+          window.location.reload();
         }
-      };
-    }
+      } catch (error) {
+        console.error('Logout error:', error);
+      }
+    };
+    
+    window.checkAuthStatus = async function() {
+      console.log('🔄 Simple checkAuthStatus called');
+      // For debugging - just hide the lock overlay
+      const lockOverlay = document.getElementById('lockOverlay');
+      if (lockOverlay) {
+        lockOverlay.style.display = 'none';
+        console.log('✅ Lock overlay hidden');
+      }
+    };
 
     // Initialize
     load();
