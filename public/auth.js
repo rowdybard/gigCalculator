@@ -128,16 +128,16 @@ async function loadUserCalculations() {
 
 // Show user information in UI
 function showUserInfo(user) {
-  // Hide login page and show main content
-  const loginPage = document.getElementById('loginPage');
-  const mainContent = document.getElementById('mainContent');
+  // Hide lock overlay and show login button
+  const lockOverlay = document.getElementById('lockOverlay');
+  const loginBtn = document.getElementById('loginBtn');
   
-  if (loginPage) {
-    loginPage.style.display = 'none';
+  if (lockOverlay) {
+    lockOverlay.style.display = 'none';
   }
   
-  if (mainContent) {
-    mainContent.classList.remove('hidden');
+  if (loginBtn) {
+    loginBtn.style.display = 'none';
   }
   
   // Update user info if elements exist
@@ -154,16 +154,16 @@ function showUserInfo(user) {
 
 // Show login button
 function showLoginButton() {
-  // Show login page and hide main content
-  const loginPage = document.getElementById('loginPage');
-  const mainContent = document.getElementById('mainContent');
+  // Show lock overlay and login button
+  const lockOverlay = document.getElementById('lockOverlay');
+  const loginBtn = document.getElementById('loginBtn');
   
-  if (loginPage) {
-    loginPage.style.display = 'flex';
+  if (lockOverlay) {
+    lockOverlay.style.display = 'flex';
   }
   
-  if (mainContent) {
-    mainContent.classList.add('hidden');
+  if (loginBtn) {
+    loginBtn.style.display = 'block';
   }
   
   // Update user info if elements exist

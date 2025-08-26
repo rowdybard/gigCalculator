@@ -15,61 +15,17 @@
   </style>
 </head>
 <body class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-100 min-h-screen">
-    <!-- Login Page -->
-    <div id="loginPage" class="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-      <div class="text-center max-w-md mx-auto px-6">
-        <!-- Logo/Icon -->
-        <div class="mb-8">
-          <i class="fas fa-truck-moving text-6xl text-indigo-400 mb-4"></i>
-          <h1 class="text-4xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent mb-2">
-            Gig Calculator
-          </h1>
-          <p class="text-slate-400 text-lg">Calculate your true hourly rate after expenses</p>
-          <p class="text-slate-500 text-sm mt-2">Powered by Hey Dispatch</p>
-        </div>
 
-        <!-- Login Section -->
-        <div class="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 border border-slate-700/50">
-          <h2 class="text-2xl font-semibold mb-6">Welcome!</h2>
-          <p class="text-slate-300 mb-8">Sign in to start calculating your gig earnings and save your calculations.</p>
-          
-          <button id="loginBtn" class="w-full px-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl font-semibold text-lg transition-all transform hover:scale-105 shadow-lg">
-            <i class="fab fa-google mr-3"></i>Continue with Google
-          </button>
-          
-          <p class="text-slate-400 text-sm mt-4">
-            We'll only access your basic profile information
-          </p>
-        </div>
 
-        <!-- Features Preview -->
-        <div class="mt-8 grid grid-cols-1 gap-4 text-left">
-          <div class="flex items-center space-x-3 text-slate-300">
-            <i class="fas fa-calculator text-indigo-400"></i>
-            <span>Real-time earnings calculations</span>
-          </div>
-          <div class="flex items-center space-x-3 text-slate-300">
-            <i class="fas fa-gas-pump text-indigo-400"></i>
-            <span>Track fuel and vehicle costs</span>
-          </div>
-          <div class="flex items-center space-x-3 text-slate-300">
-            <i class="fas fa-save text-indigo-400"></i>
-            <span>Save and compare calculations</span>
-          </div>
-          <div class="flex items-center space-x-3 text-slate-300">
-            <i class="fas fa-share text-indigo-400"></i>
-            <span>Share scorecards with others</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-  <div id="mainContent" class="max-w-6xl mx-auto p-4 space-y-6 hidden">
+  <div id="mainContent" class="max-w-6xl mx-auto p-4 space-y-6">
     <!-- Header -->
     <header class="text-center space-y-2">
       <div class="flex justify-between items-center mb-4">
         <div></div> <!-- Spacer -->
         <div id="auth-section" class="flex items-center space-x-4">
+          <button id="loginBtn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-all">
+            <i class="fab fa-google mr-2"></i>Sign in with Google
+          </button>
           <div id="userInfo" class="flex items-center space-x-3 hidden">
             <img id="userPicture" class="w-8 h-8 rounded-full" />
             <span id="userName" class="text-slate-300 font-medium"></span>
@@ -93,7 +49,15 @@
 
 
     <!-- Main Calculator -->
-    <div class="grid lg:grid-cols-3 gap-6">
+    <div class="grid lg:grid-cols-3 gap-6 relative">
+      <!-- Lock Overlay (shown when not authenticated) -->
+      <div id="lockOverlay" class="absolute inset-0 bg-slate-900/80 backdrop-blur-sm rounded-2xl z-10 flex items-center justify-center">
+        <div class="text-center">
+          <i class="fas fa-lock text-6xl text-slate-400 mb-4"></i>
+          <h3 class="text-xl font-semibold text-slate-300 mb-2">Calculator Locked</h3>
+          <p class="text-slate-400">Please sign in to access the calculator</p>
+        </div>
+      </div>
       <!-- Inputs -->
       <div class="lg:col-span-2 space-y-6">
         <section class="bg-slate-800/60 rounded-2xl p-6 ring-1 ring-white/10">
