@@ -274,10 +274,10 @@
       
       <div class="flex gap-3 mt-6">
         <button id="shareScorecard" class="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-semibold rounded-lg transition-all flex-1">
-          <i class="fas fa-share-alt mr-2"></i>Share to Social Media
+          <i class="fas fa-download mr-2"></i>Download Image
         </button>
         <button id="copyScorecard" class="px-6 py-3 bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-500 hover:to-orange-500 text-white font-semibold rounded-lg transition-all">
-          <i class="fas fa-copy mr-2"></i>Copy Share URL
+          <i class="fas fa-share-alt mr-2"></i>Share Image
         </button>
       </div>
     </div>
@@ -830,95 +830,275 @@
       document.getElementById('scorecardModal').classList.add('hidden');
     }
     
-    // Generate a shareable scorecard URL with embedded data
-    function generateScorecardUrl() {
+    // Generate a beautiful scorecard image
+    function generateScorecardImage() {
       const scoreData = calculateScore();
       const grossHourly = parseFloat($("grossHourly").textContent.replace('$', '').replace('/hr', '')) || 0;
       const netHourly = parseFloat($("realHourly").textContent.replace('$', '').replace('/hr', '')) || 0;
       const netProfit = parseFloat($("netProfit").textContent.replace('$', '')) || 0;
+      const hours = parseFloat($("hours").value) || 0;
+      const miles = parseFloat($("miles").value) || 0;
       
-      // Create a compressed data string
-      const data = {
-        s: scoreData.score,
-        g: scoreData.grade,
-        gh: Math.round(grossHourly * 100) / 100,
-        nh: Math.round(netHourly * 100) / 100,
-        np: Math.round(netProfit * 100) / 100,
-        t: Date.now()
-      };
+      // Create canvas for the scorecard
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = 1200;
+      canvas.height = 800;
       
-      // Convert to base64 for short URL
-      const dataString = btoa(JSON.stringify(data));
-      return `${window.location.origin}/?share=${dataString}`;
-    }
-    
-    function shareScorecard() {
-      const scoreUrl = generateScorecardUrl();
-      const scoreData = calculateScore();
-      const shareText = `I just scored ${scoreData.score}/100 (Grade: ${scoreData.grade}) on my gig shift! 🚛💪`;
+      // Background gradient
+      const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+      gradient.addColorStop(0, '#0f172a');
+      gradient.addColorStop(0.5, '#1e293b');
+      gradient.addColorStop(1, '#0f172a');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
       
-      if (navigator.share) {
-        // Web Share API for mobile
-        navigator.share({
-          title: 'My Gig Performance Scorecard',
-          text: shareText,
-          url: scoreUrl
-        }).catch(err => {
-          console.log('Error sharing:', err);
-          fallbackShare(shareText, scoreUrl);
-        });
-      } else {
-        fallbackShare(shareText, scoreUrl);
+      // Add subtle grid pattern
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+      ctx.lineWidth = 1;
+      for (let i = 0; i < canvas.width; i += 40) {
+        ctx.beginPath();
+        ctx.moveTo(i, 0);
+        ctx.lineTo(i, canvas.height);
+        ctx.stroke();
       }
-    }
-    
-    function fallbackShare(shareText, scoreUrl) {
-      // Create social media sharing URLs with the scorecard URL
-      const encodedText = encodeURIComponent(shareText);
-      const encodedUrl = encodeURIComponent(scoreUrl);
+      for (let i = 0; i < canvas.height; i += 40) {
+        ctx.beginPath();
+        ctx.moveTo(0, i);
+        ctx.lineTo(canvas.width, i);
+        ctx.stroke();
+      }
       
-      const shareOptions = [
+      // Header section
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 48px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('GIG PERFORMANCE SCORECARD', canvas.width / 2, 80);
+      
+      // Subtitle
+      ctx.font = '24px Arial';
+      ctx.fillStyle = '#94a3b8';
+      ctx.fillText('Powered by Hey Dispatch', canvas.width / 2, 120);
+      
+      // Score circle (larger and more prominent)
+      const centerX = canvas.width / 2;
+      const centerY = 280;
+      const radius = 120;
+      
+      // Outer glow
+      const glowGradient = ctx.createRadialGradient(centerX, centerY, radius - 20, centerX, centerY, radius + 30);
+      glowGradient.addColorStop(0, scoreData.score >= 70 ? 'rgba(16, 185, 129, 0.3)' : scoreData.score >= 50 ? 'rgba(245, 158, 11, 0.3)' : 'rgba(239, 68, 68, 0.3)');
+      glowGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = glowGradient;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius + 30, 0, 2 * Math.PI);
+      ctx.fill();
+      
+      // Main score circle
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+      ctx.fillStyle = scoreData.score >= 70 ? '#10b981' : scoreData.score >= 50 ? '#f59e0b' : '#ef4444';
+      ctx.fill();
+      
+      // Inner circle for depth
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius - 20, 0, 2 * Math.PI);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+      ctx.fill();
+      
+      // Score text
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 84px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText(scoreData.score.toString(), centerX, centerY + 20);
+      
+      // Grade text
+      ctx.font = 'bold 36px Arial';
+      ctx.fillText(`Grade: ${scoreData.grade}`, centerX, centerY + 70);
+      
+      // Stats boxes
+      const boxWidth = 280;
+      const boxHeight = 120;
+      const boxY = 450;
+      const spacing = 40;
+      const totalWidth = (boxWidth * 3) + (spacing * 2);
+      const startX = (canvas.width - totalWidth) / 2;
+      
+      // Box data
+      const boxes = [
         {
-          name: 'Twitter',
-          url: `https://twitter.com/intent/tweet?text=${encodedText}&url=${encodedUrl}`,
-          icon: 'fab fa-twitter'
+          title: 'GROSS HOURLY',
+          value: `$${grossHourly.toFixed(2)}/hr`,
+          color: '#10b981',
+          x: startX
         },
         {
-          name: 'Facebook',
-          url: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}&quote=${encodedText}`,
-          icon: 'fab fa-facebook'
+          title: 'NET HOURLY', 
+          value: `$${netHourly.toFixed(2)}/hr`,
+          color: '#3b82f6',
+          x: startX + boxWidth + spacing
         },
         {
-          name: 'LinkedIn',
-          url: `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`,
-          icon: 'fab fa-linkedin'
-        },
-        {
-          name: 'WhatsApp',
-          url: `https://wa.me/?text=${encodedText}%20${encodedUrl}`,
-          icon: 'fab fa-whatsapp'
+          title: 'TOTAL PROFIT',
+          value: `$${netProfit.toFixed(2)}`,
+          color: '#8b5cf6',
+          x: startX + (boxWidth + spacing) * 2
         }
       ];
       
-      // Create a simple modal with sharing options
+      boxes.forEach(box => {
+        // Box background
+        ctx.fillStyle = 'rgba(30, 41, 59, 0.8)';
+        ctx.fillRect(box.x, boxY, boxWidth, boxHeight);
+        
+        // Box border
+        ctx.strokeStyle = box.color;
+        ctx.lineWidth = 3;
+        ctx.strokeRect(box.x, boxY, boxWidth, boxHeight);
+        
+        // Title
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = 'bold 18px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(box.title, box.x + boxWidth/2, boxY + 30);
+        
+        // Value
+        ctx.fillStyle = box.color;
+        ctx.font = 'bold 32px Arial';
+        ctx.fillText(box.value, box.x + boxWidth/2, boxY + 70);
+      });
+      
+      // Bottom stats
+      const bottomY = 650;
+      ctx.fillStyle = '#e2e8f0';
+      ctx.font = '24px Arial';
+      ctx.textAlign = 'left';
+      
+      const leftStats = `${hours.toFixed(1)} Hours Worked • ${miles.toFixed(0)} Miles Driven`;
+      const date = new Date().toLocaleDateString();
+      
+      ctx.fillText(leftStats, 60, bottomY);
+      ctx.textAlign = 'right';
+      ctx.fillText(date, canvas.width - 60, bottomY);
+      
+      // Footer
+      ctx.fillStyle = '#64748b';
+      ctx.font = 'italic 20px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('"Track your hustle, maximize your profit"', canvas.width / 2, 720);
+      
+      return canvas;
+    }
+    
+    function shareScorecard() {
+      try {
+        const canvas = generateScorecardImage();
+        const scoreData = calculateScore();
+        
+        // Generate filename with score and date
+        const date = new Date().toISOString().split('T')[0];
+        const filename = `gig-scorecard-${scoreData.score}-${date}.png`;
+        
+        // Convert canvas to blob and download
+        canvas.toBlob((blob) => {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          
+          showNotification('Scorecard image downloaded! 📸', 'success');
+        }, 'image/png');
+        
+      } catch (error) {
+        console.error('Error generating scorecard:', error);
+        showNotification('Failed to generate scorecard image', 'error');
+      }
+    }
+    
+
+    
+    function copyScorecardImageUrl() {
+      try {
+        const canvas = generateScorecardImage();
+        const scoreData = calculateScore();
+        
+        // Convert canvas to blob for sharing
+        canvas.toBlob(async (blob) => {
+          const shareText = `I just scored ${scoreData.score}/100 (Grade: ${scoreData.grade}) on my gig shift! 🚛💪`;
+          
+          if (navigator.share && navigator.canShare && navigator.canShare({ files: [new File([blob], 'scorecard.png', { type: 'image/png' })] })) {
+            // Native sharing with image file (mobile)
+            try {
+              const file = new File([blob], 'gig-scorecard.png', { type: 'image/png' });
+              await navigator.share({
+                title: 'My Gig Performance Scorecard',
+                text: shareText,
+                files: [file]
+              });
+              showNotification('Sharecard shared successfully! 🎉', 'success');
+            } catch (err) {
+              console.log('Native share failed, showing fallback');
+              showImageShareModal(blob, shareText);
+            }
+          } else {
+            // Fallback for desktop - show image sharing modal
+            showImageShareModal(blob, shareText);
+          }
+        }, 'image/png');
+        
+      } catch (error) {
+        console.error('Error generating scorecard:', error);
+        showNotification('Failed to generate scorecard image', 'error');
+      }
+    }
+    
+    function showImageShareModal(blob, shareText) {
+      // Create object URL for the image
+      const imageUrl = URL.createObjectURL(blob);
+      
+      // Create sharing modal
       const shareModal = document.createElement('div');
-      shareModal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+      shareModal.className = 'fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4';
       shareModal.innerHTML = `
-        <div class="bg-slate-800 rounded-2xl p-6 max-w-md w-full mx-4">
-          <h3 class="text-xl font-bold text-white mb-4">Share Your Scorecard</h3>
-          <div class="text-sm text-slate-300 mb-4 p-3 bg-slate-700 rounded-lg">
-            <strong>Sharecard URL:</strong><br>
-            <span class="text-indigo-400 break-all">${scoreUrl}</span>
+        <div class="bg-slate-800 rounded-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold text-white">Share Your Scorecard</h3>
+            <button onclick="this.closest('.fixed').remove(); URL.revokeObjectURL('${imageUrl}')" class="text-slate-400 hover:text-white text-2xl">
+              <i class="fas fa-times"></i>
+            </button>
           </div>
-          <div class="grid grid-cols-2 gap-3">
-            ${shareOptions.map(option => `
-              <a href="${option.url}" target="_blank" class="flex items-center justify-center space-x-2 p-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-all text-white">
-                <i class="${option.icon}"></i>
-                <span>${option.name}</span>
-              </a>
-            `).join('')}
+          
+          <!-- Preview Image -->
+          <div class="mb-4 text-center">
+            <img src="${imageUrl}" alt="Scorecard" class="max-w-full h-auto rounded-lg border border-slate-600" style="max-height: 300px;">
           </div>
-          <button onclick="this.parentElement.parentElement.remove()" class="w-full mt-4 px-4 py-2 bg-slate-600 hover:bg-slate-500 rounded-lg text-white transition-all">
+          
+          <!-- Share Instructions -->
+          <div class="space-y-4">
+            <div class="bg-slate-700 rounded-lg p-4">
+              <h4 class="font-semibold text-white mb-2">📱 On Mobile:</h4>
+              <p class="text-slate-300 text-sm">Long press the image above, then select "Save to Photos" or "Share Image"</p>
+            </div>
+            
+            <div class="bg-slate-700 rounded-lg p-4">
+              <h4 class="font-semibold text-white mb-2">💻 On Desktop:</h4>
+              <p class="text-slate-300 text-sm">Right-click the image above and select "Save image as..." or "Copy image"</p>
+            </div>
+            
+            <div class="bg-indigo-700 rounded-lg p-4">
+              <h4 class="font-semibold text-white mb-2">📝 Share Text:</h4>
+              <p class="text-indigo-200 text-sm bg-indigo-800 p-2 rounded border select-all">${shareText}</p>
+              <button onclick="navigator.clipboard.writeText('${shareText}').then(() => showNotification('Text copied!', 'success'))" class="mt-2 px-3 py-1 bg-indigo-600 hover:bg-indigo-500 rounded text-sm text-white">
+                Copy Text
+              </button>
+            </div>
+          </div>
+          
+          <button onclick="this.closest('.fixed').remove(); URL.revokeObjectURL('${imageUrl}')" class="w-full mt-4 px-4 py-2 bg-slate-600 hover:bg-slate-500 rounded-lg text-white transition-all">
             Close
           </button>
         </div>
@@ -926,29 +1106,13 @@
       
       document.body.appendChild(shareModal);
       
-      // Remove modal when clicking outside
+      // Clean up on click outside
       shareModal.addEventListener('click', (e) => {
         if (e.target === shareModal) {
           shareModal.remove();
+          URL.revokeObjectURL(imageUrl);
         }
       });
-    }
-    
-    function copyScorecardImageUrl() {
-      try {
-        const scoreUrl = generateScorecardUrl();
-        
-        // Copy scorecard URL to clipboard
-        navigator.clipboard.writeText(scoreUrl).then(() => {
-          showNotification('Scorecard URL copied to clipboard!', 'success');
-        }).catch(err => {
-          console.error('Failed to copy URL:', err);
-          showNotification('Failed to copy URL', 'error');
-        });
-      } catch (err) {
-        console.error('Failed to generate scorecard URL:', err);
-        showNotification('Failed to generate scorecard URL', 'error');
-      }
     }
 
     // Save current calculation to database
@@ -1604,3 +1768,4 @@
   </script>
 </body>
 </html>
+
