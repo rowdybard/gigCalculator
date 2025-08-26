@@ -1092,7 +1092,7 @@
             <div class="bg-indigo-700 rounded-lg p-4">
               <h4 class="font-semibold text-white mb-2">📝 Share Text:</h4>
               <p class="text-indigo-200 text-sm bg-indigo-800 p-2 rounded border select-all">${shareText}</p>
-              <button onclick="navigator.clipboard.writeText('${shareText}').then(() => showNotification('Text copied!', 'success'))" class="mt-2 px-3 py-1 bg-indigo-600 hover:bg-indigo-500 rounded text-sm text-white">
+              <button id="copyTextBtn-${Date.now()}" class="mt-2 px-3 py-1 bg-indigo-600 hover:bg-indigo-500 rounded text-sm text-white">
                 Copy Text
               </button>
             </div>
@@ -1105,6 +1105,36 @@
       `;
       
       document.body.appendChild(shareModal);
+      
+      // Add copy text functionality
+      const copyTextBtn = shareModal.querySelector('[id^="copyTextBtn-"]');
+      if (copyTextBtn) {
+        copyTextBtn.addEventListener('click', async () => {
+          try {
+            await navigator.clipboard.writeText(shareText);
+            showNotification('Share text copied to clipboard! 📋', 'success');
+            copyTextBtn.textContent = 'Copied!';
+            setTimeout(() => {
+              copyTextBtn.textContent = 'Copy Text';
+            }, 2000);
+          } catch (err) {
+            console.error('Failed to copy text:', err);
+            
+            // Fallback: Select the text
+            const textElement = shareModal.querySelector('.select-all');
+            if (textElement) {
+              const range = document.createRange();
+              range.selectNodeContents(textElement);
+              const selection = window.getSelection();
+              selection.removeAllRanges();
+              selection.addRange(range);
+              showNotification('Text selected - press Ctrl+C to copy', 'info');
+            } else {
+              showNotification('Failed to copy text', 'error');
+            }
+          }
+        });
+      }
       
       // Clean up on click outside
       shareModal.addEventListener('click', (e) => {
