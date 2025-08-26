@@ -785,7 +785,9 @@
 
     // Decimal validation function (more flexible for currency inputs)
     function validateDecimal(input, min = 0, max = null) {
+      const cursorPosition = input.selectionStart;
       let value = input.value;
+      let originalLength = value.length;
       
       // Remove any non-numeric characters except decimal point
       value = value.replace(/[^0-9.]/g, '');
@@ -801,8 +803,15 @@
         value = parts[0] + '.' + parts[1].substring(0, 2);
       }
       
-      // Update input value (preserve decimal while typing)
-      input.value = value;
+      // Only update if value actually changed
+      if (input.value !== value) {
+        input.value = value;
+        
+        // Restore cursor position
+        const lengthDifference = originalLength - value.length;
+        const newCursorPosition = Math.max(0, cursorPosition - lengthDifference);
+        input.setSelectionRange(newCursorPosition, newCursorPosition);
+      }
       
       // Only validate constraints if we have a complete number
       if (value !== '' && value !== '.') {
