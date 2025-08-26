@@ -273,14 +273,11 @@
       </div>
       
       <div class="flex gap-3 mt-6">
-        <button id="downloadScorecard" class="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-semibold rounded-lg transition-all">
-          <i class="fas fa-download mr-2"></i>Download Image
-        </button>
-        <button id="shareScorecard" class="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-semibold rounded-lg transition-all">
-          <i class="fas fa-share-alt mr-2"></i>Share
+        <button id="shareScorecard" class="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-semibold rounded-lg transition-all flex-1">
+          <i class="fas fa-share-alt mr-2"></i>Share to Social Media
         </button>
         <button id="copyScorecard" class="px-6 py-3 bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-500 hover:to-orange-500 text-white font-semibold rounded-lg transition-all">
-          <i class="fas fa-copy mr-2"></i>Copy Link
+          <i class="fas fa-copy mr-2"></i>Copy Image URL
         </button>
       </div>
     </div>
@@ -616,9 +613,8 @@
     
     // Scorecard modal listeners
     document.getElementById('closeScorecard').addEventListener('click', closeScorecard);
-    document.getElementById('downloadScorecard').addEventListener('click', downloadScorecard);
     document.getElementById('shareScorecard').addEventListener('click', shareScorecard);
-    document.getElementById('copyScorecard').addEventListener('click', copyScorecardLink);
+    document.getElementById('copyScorecard').addEventListener('click', copyScorecardImageUrl);
     
     // Auth event listeners
     const loginBtn = document.getElementById('loginBtn');
@@ -834,27 +830,162 @@
       document.getElementById('scorecardModal').classList.add('hidden');
     }
     
-    function downloadScorecard() {
-      // This would require html2canvas library for image generation
-      showNotification('Download feature coming soon!', 'info');
+    // Generate scorecard image URL for social media sharing
+    function generateScorecardImageUrl() {
+      const scoreData = calculateScore();
+      const grossHourly = parseFloat($("grossHourly").textContent.replace('$', '').replace('/hr', '')) || 0;
+      const netHourly = parseFloat($("realHourly").textContent.replace('$', '').replace('/hr', '')) || 0;
+      const netProfit = parseFloat($("netProfit").textContent.replace('$', '')) || 0;
+      
+      // Create a data URL for a simple scorecard image
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = 800;
+      canvas.height = 600;
+      
+      // Background gradient
+      const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+      gradient.addColorStop(0, '#1e293b');
+      gradient.addColorStop(1, '#0f172a');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Title
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 48px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('Gig Performance Scorecard', canvas.width / 2, 80);
+      
+      // Score circle
+      const centerX = canvas.width / 2;
+      const centerY = 200;
+      const radius = 80;
+      
+      // Score background circle
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+      ctx.fillStyle = scoreData.score >= 70 ? '#10b981' : scoreData.score >= 50 ? '#f59e0b' : '#ef4444';
+      ctx.fill();
+      
+      // Score text
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 64px Arial';
+      ctx.fillText(scoreData.score.toString(), centerX, centerY + 20);
+      
+      // Grade
+      ctx.font = 'bold 32px Arial';
+      ctx.fillText(scoreData.grade, centerX, centerY + 60);
+      
+      // Stats
+      ctx.fillStyle = '#e2e8f0';
+      ctx.font = '28px Arial';
+      ctx.textAlign = 'left';
+      
+      const statsY = 350;
+      const leftX = 100;
+      const rightX = 500;
+      
+      ctx.fillText(`Gross: $${grossHourly.toFixed(2)}/hr`, leftX, statsY);
+      ctx.fillText(`Net: $${netHourly.toFixed(2)}/hr`, rightX, statsY);
+      ctx.fillText(`Total Profit: $${netProfit.toFixed(2)}`, leftX, statsY + 50);
+      ctx.fillText(`Grade: ${scoreData.grade}`, rightX, statsY + 50);
+      
+      // Footer
+      ctx.fillStyle = '#64748b';
+      ctx.font = '24px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('Powered by Hey Dispatch', centerX, 550);
+      
+      return canvas.toDataURL('image/png');
     }
     
     function shareScorecard() {
+      const imageUrl = generateScorecardImageUrl();
+      const scoreData = calculateScore();
+      const shareText = `I just scored ${scoreData.score}/100 (Grade: ${scoreData.grade}) on my gig shift! 🚛💪`;
+      
       if (navigator.share) {
+        // Web Share API for mobile
         navigator.share({
-          title: 'My Gig Scorecard',
-          text: `I scored ${calculateScore().score}/100 on my gig shift! Check out my performance.`,
+          title: 'My Gig Performance Scorecard',
+          text: shareText,
           url: window.location.href
+        }).catch(err => {
+          console.log('Error sharing:', err);
+          fallbackShare(shareText, imageUrl);
         });
       } else {
-        copyScorecardLink();
+        fallbackShare(shareText, imageUrl);
       }
     }
     
-    function copyScorecardLink() {
-      const url = window.location.href;
-      navigator.clipboard.writeText(url).then(() => {
-        showNotification('Scorecard link copied to clipboard!', 'success');
+    function fallbackShare(shareText, imageUrl) {
+      // Create social media sharing URLs
+      const encodedText = encodeURIComponent(shareText);
+      const encodedUrl = encodeURIComponent(window.location.href);
+      
+      const shareOptions = [
+        {
+          name: 'Twitter',
+          url: `https://twitter.com/intent/tweet?text=${encodedText}&url=${encodedUrl}`,
+          icon: 'fab fa-twitter'
+        },
+        {
+          name: 'Facebook',
+          url: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}&quote=${encodedText}`,
+          icon: 'fab fa-facebook'
+        },
+        {
+          name: 'LinkedIn',
+          url: `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`,
+          icon: 'fab fa-linkedin'
+        },
+        {
+          name: 'WhatsApp',
+          url: `https://wa.me/?text=${encodedText}%20${encodedUrl}`,
+          icon: 'fab fa-whatsapp'
+        }
+      ];
+      
+      // Create a simple modal with sharing options
+      const shareModal = document.createElement('div');
+      shareModal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+      shareModal.innerHTML = `
+        <div class="bg-slate-800 rounded-2xl p-6 max-w-md w-full mx-4">
+          <h3 class="text-xl font-bold text-white mb-4">Share Your Scorecard</h3>
+          <div class="grid grid-cols-2 gap-3">
+            ${shareOptions.map(option => `
+              <a href="${option.url}" target="_blank" class="flex items-center justify-center space-x-2 p-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-all text-white">
+                <i class="${option.icon}"></i>
+                <span>${option.name}</span>
+              </a>
+            `).join('')}
+          </div>
+          <button onclick="this.parentElement.parentElement.remove()" class="w-full mt-4 px-4 py-2 bg-slate-600 hover:bg-slate-500 rounded-lg text-white transition-all">
+            Close
+          </button>
+        </div>
+      `;
+      
+      document.body.appendChild(shareModal);
+      
+      // Remove modal when clicking outside
+      shareModal.addEventListener('click', (e) => {
+        if (e.target === shareModal) {
+          shareModal.remove();
+        }
+      });
+    }
+    
+    function copyScorecardImageUrl() {
+      const imageUrl = generateScorecardImageUrl();
+      
+      // Copy image URL to clipboard
+      navigator.clipboard.writeText(imageUrl).then(() => {
+        showNotification('Scorecard image URL copied to clipboard!', 'success');
+      }).catch(err => {
+        console.error('Failed to copy image URL:', err);
+        showNotification('Failed to copy image URL', 'error');
       });
     }
 
@@ -1221,10 +1352,7 @@
                 <div class="text-xs text-slate-400 uppercase tracking-wider">Score</div>
               </div>
               
-              <div class="flex flex-col space-y-2">
-                <button onclick="loadCalculation(${actualIndex})" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-sm font-medium text-white transition-all">
-                  <i class="fas fa-upload mr-1"></i>Load
-                </button>
+              <div>
                 <button onclick="deleteCalculation(${actualIndex})" class="px-4 py-2 bg-red-600/80 hover:bg-red-600 rounded-lg text-sm font-medium text-white transition-all">
                   <i class="fas fa-trash mr-1"></i>Delete
                 </button>
@@ -1422,17 +1550,6 @@
       window.URL.revokeObjectURL(url);
       
       showNotification('Calculations exported successfully!', 'success');
-    }
-
-    function loadCalculation(index) {
-      const calculations = window.savedCalculationsData;
-      if (!calculations || !calculations[index]) return;
-      
-      const calc = calculations[index];
-      
-      // Load the calculation data back into the form
-      // This would require extracting the original input values
-      showNotification('Load calculation feature coming soon!', 'info');
     }
 
     // Delete calculation
