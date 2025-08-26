@@ -1,5 +1,6 @@
 const express = require('express');
 const session = require('express-session');
+const pgSession = require('connect-pg-simple')(session);
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const { Pool } = require('pg');
@@ -38,19 +39,19 @@ async function initDatabase() {
       )
     `);
 
-    // Create sessions table for persistent session storage
+    // Create sessions table for connect-pg-simple
     await pool.query(`
-      CREATE TABLE IF NOT EXISTS user_sessions (
-        sid VARCHAR NOT NULL COLLATE "default",
-        sess JSON NOT NULL,
-        expire TIMESTAMP(6) NOT NULL
+      CREATE TABLE IF NOT EXISTS "session" (
+        "sid" varchar NOT NULL COLLATE "default",
+        "sess" json NOT NULL,
+        "expire" timestamp(6) NOT NULL
       )
       WITH (OIDS=FALSE);
       
-      ALTER TABLE user_sessions DROP CONSTRAINT IF EXISTS session_pkey;
-      ALTER TABLE user_sessions ADD CONSTRAINT session_pkey PRIMARY KEY (sid) NOT DEFERRABLE INITIALLY IMMEDIATE;
+      ALTER TABLE "session" DROP CONSTRAINT IF EXISTS "session_pkey";
+      ALTER TABLE "session" ADD CONSTRAINT "session_pkey" PRIMARY KEY ("sid") NOT DEFERRABLE INITIALLY IMMEDIATE;
       
-      CREATE INDEX IF NOT EXISTS IDX_session_expire ON user_sessions(expire);
+      CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON "session" ("expire");
     `);
 
     // Create calculations table with enhanced tracking
@@ -116,68 +117,7 @@ async function initDatabase() {
   }
 }
 
-// Custom session store using PostgreSQL
-class PostgreSQLStore {
-  constructor(pool) {
-    this.pool = pool;
-  }
-
-  async get(sid, callback) {
-    try {
-      const result = await this.pool.query(
-        'SELECT sess FROM user_sessions WHERE sid = $1 AND expire > NOW()',
-        [sid]
-      );
-      
-      if (result.rows.length > 0) {
-        callback(null, result.rows[0].sess);
-      } else {
-        callback(null, null);
-      }
-    } catch (error) {
-      callback(error);
-    }
-  }
-
-  async set(sid, session, callback) {
-    try {
-      const expire = new Date(Date.now() + (session.cookie.maxAge || 86400000)); // 24 hours default
-      
-      await this.pool.query(`
-        INSERT INTO user_sessions (sid, sess, expire) 
-        VALUES ($1, $2, $3) 
-        ON CONFLICT (sid) 
-        DO UPDATE SET sess = $2, expire = $3
-      `, [sid, session, expire]);
-      
-      callback(null);
-    } catch (error) {
-      callback(error);
-    }
-  }
-
-  async destroy(sid, callback) {
-    try {
-      await this.pool.query('DELETE FROM user_sessions WHERE sid = $1', [sid]);
-      callback(null);
-    } catch (error) {
-      callback(error);
-    }
-  }
-
-  async touch(sid, session, callback) {
-    try {
-      const expire = new Date(Date.now() + (session.cookie.maxAge || 86400000));
-      await this.pool.query(
-        'UPDATE user_sessions SET expire = $1 WHERE sid = $2',
-        [expire, sid]
-      );
-      callback(null);
-    } catch (error) {
-      callback(error);
-    }
-  }
-}
+// Session store will be created below using connect-pg-simple
 
 // Middleware setup
 app.use(helmet({
@@ -207,7 +147,11 @@ app.use(express.static('public'));
 
 // Session configuration
 app.use(session({
-  store: new PostgreSQLStore(pool),
+  store: new pgSession({
+    pool: pool,
+    tableName: 'session',
+    createTableIfMissing: false // We create it manually above
+  }),
   secret: process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex'),
   resave: false,
   saveUninitialized: false,
