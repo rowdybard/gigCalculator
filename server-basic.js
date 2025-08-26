@@ -97,8 +97,8 @@ app.get('/auth/callback', async (req, res) => {
       },
       body: new URLSearchParams({
         code,
-        client_id: process.env.GOOGLE_CLIENT_ID,
-        client_secret: process.env.GOOGLE_CLIENT_SECRET,
+        client_id: process.env.GIG_CALC_GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID,
+        client_secret: process.env.GIG_CALC_GOOGLE_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET,
         redirect_uri: `${req.protocol}://${req.get('host')}/auth/callback`,
         grant_type: 'authorization_code',
       }),

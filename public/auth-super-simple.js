@@ -1,6 +1,7 @@
 // Super simple Google OAuth
 console.log('Super simple auth loaded');
 
+// This will need to be updated to use the new client ID once you create it
 const GOOGLE_CLIENT_ID = '857672033553-l35tnpme67c0vd3526ruedg9sjras5ds.apps.googleusercontent.com';
 
 // Sign in with Google
