@@ -1117,7 +1117,7 @@
           const finalHtml = htmlContent.replace(/REPLACE_IMAGE_URL/g, imageUrl);
           shareWindow.document.write(finalHtml);
 
-          // Wire up copy interactions in the new window (avoid inline <script> to prevent </script> parse issues)
+          // Wire up copy interactions in the new window (avoid inline script to prevent closing-tag parse issues)
           const copyBtn = shareWindow.document.getElementById('copyBtn');
           const notificationEl = shareWindow.document.getElementById('notification');
           const urlTextEl = shareWindow.document.getElementById('imageUrl');
