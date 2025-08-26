@@ -312,6 +312,14 @@
           <i class="fas fa-calculator text-3xl mb-2"></i>
           <p>No saved calculations yet</p>
           <p class="text-sm">Complete a calculation and click "Save" to see it here</p>
+          <div class="mt-3 space-x-2">
+            <button id="manualLoad" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-sm font-medium text-white transition-all">
+              <i class="fas fa-sync-alt mr-1"></i>Try Loading Again
+            </button>
+            <button id="testAdminView" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded-lg text-sm font-medium text-white transition-all">
+              <i class="fas fa-database mr-1"></i>Test Admin View
+            </button>
+          </div>
         </div>
         
         <div id="calculationsList" class="space-y-3 hidden">
@@ -974,17 +982,23 @@
         const authResponse = await fetch('/api/auth/status');
         const authData = await authResponse.json();
         
+        console.log('🔐 Auth status:', authData);
+        
         if (authData.authenticated) {
           console.log('📡 Fetching from database for user:', authData.user.email);
           
           // Fetch from database API
           const response = await fetch('/api/calculations?limit=50');
+          console.log('📡 API response status:', response.status);
+          
           if (response.ok) {
             const data = await response.json();
             calculations = data.calculations || [];
-            console.log('📊 Database calculations:', calculations.length);
+            console.log('📊 Database calculations received:', calculations.length);
+            console.log('📊 Sample calculation:', calculations[0]);
           } else {
-            console.error('❌ Failed to fetch calculations from database');
+            const errorText = await response.text();
+            console.error('❌ Failed to fetch calculations from database:', response.status, errorText);
           }
         } else {
           console.log('❌ User not authenticated, cannot load calculations');
@@ -999,6 +1013,8 @@
         
         if (calculations.length === 0) {
           noCalculations.classList.remove('hidden');
+          calculationCount.classList.add('hidden');
+          document.getElementById('toggleViewMode').classList.add('hidden');
         } else {
           // Update count badge
           calculationCount.textContent = calculations.length;
@@ -1151,9 +1167,21 @@
       const toggleBtn = document.getElementById('toggleViewMode');
       const prevBtn = document.getElementById('prevPage');
       const nextBtn = document.getElementById('nextPage');
+      const manualLoadBtn = document.getElementById('manualLoad');
+      const testAdminBtn = document.getElementById('testAdminView');
       
       if (refreshBtn) {
         refreshBtn.addEventListener('click', loadSavedCalculations);
+      }
+      
+      if (manualLoadBtn) {
+        manualLoadBtn.addEventListener('click', loadSavedCalculations);
+      }
+      
+      if (testAdminBtn) {
+        testAdminBtn.addEventListener('click', () => {
+          window.open('/api/admin/users', '_blank');
+        });
       }
       
       if (toggleBtn) {
@@ -1168,8 +1196,10 @@
         nextBtn.addEventListener('click', () => changePage('next'));
       }
       
-      // Load calculations after page is ready
-      loadSavedCalculations();
+      // Load calculations after page is ready and auth is checked
+      setTimeout(() => {
+        loadSavedCalculations();
+      }, 2000); // Give more time for auth to be established
     }, 1000);
   </script>
 </body>
