@@ -80,6 +80,17 @@ initDatabase();
 
 // API Routes
 
+// Test OAuth URL
+app.get('/api/test-oauth', (req, res) => {
+  const redirectUri = `${req.protocol}://${req.get('host')}`;
+  res.json({
+    redirectUri,
+    clientId: process.env.GOOGLE_CLIENT_ID,
+    hasClientSecret: !!process.env.GOOGLE_CLIENT_SECRET,
+    oauthUrl: `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=openid%20email%20profile&access_type=offline`
+  });
+});
+
 // Health check
 app.get('/api/health', async (req, res) => {
   try {
@@ -108,6 +119,9 @@ app.get('/api/health', async (req, res) => {
 
 // Google OAuth callback
 app.get('/', async (req, res) => {
+  console.log('Root route hit - URL:', req.url);
+  console.log('Query params:', req.query);
+  
   // Check if this is an OAuth callback
   const { code } = req.query;
   
