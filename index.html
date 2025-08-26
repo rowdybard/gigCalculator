@@ -114,7 +114,7 @@
             </div>
             <div>
               <label class="text-sm text-slate-300 font-medium">Wear & Tear ($/mile)</label>
-              <input id="wear" type="number" step="0.01" min="0" class="w-full mt-1 rounded-lg bg-slate-700 ring-1 ring-white/10 p-3 text-lg" value="0" placeholder="0.00" oninput="validateNumber(this, 0)">
+              <input id="wear" type="number" step="0.01" min="0" class="w-full mt-1 rounded-lg bg-slate-700 ring-1 ring-white/10 p-3 text-lg" value="0.67" placeholder="0.00" oninput="validateNumber(this, 0)">
               <p class="text-xs text-slate-500 mt-1">Typical range: $0.60-$0.70/mile</p>
             </div>
             <div>
@@ -693,7 +693,7 @@
         gross_hourly: parseFloat($("grossHourly").textContent.replace('$', '').replace('/hr', '')) || 0,
         net_hourly: parseFloat($("realHourly").textContent.replace('$', '').replace('/hr', '')) || 0,
         fuel_cost: parseFloat($("fuelCost").textContent.replace('$', '')) || 0,
-        wear_tear_cost: parseFloat($("wearTear").value) || 0,
+        wear_tear_cost: parseFloat($("wear").value) || 0,
         tax_rate: parseFloat($("tax").value) || 0,
         gross_per_mile: parseFloat($("grossPerMile").textContent.replace('$', '').replace('/mile', '')) || 0,
         net_per_mile: parseFloat($("netPerMile").textContent.replace('$', '').replace('/mile', '')) || 0,
