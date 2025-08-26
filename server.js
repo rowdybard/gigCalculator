@@ -3,7 +3,6 @@ const path = require('path');
 const cors = require('cors');
 const helmet = require('helmet');
 const session = require('express-session');
-const FirestoreStore = require('connect-firestore')(session);
 const admin = require('firebase-admin');
 require('dotenv').config();
 
@@ -49,13 +48,8 @@ app.use(cors());
 // Parse JSON bodies
 app.use(express.json());
 
-// Session configuration with Firestore store
+// Session configuration
 app.use(session({
-  store: new FirestoreStore({
-    dataset: db,
-    kind: 'sessions',
-    ttl: 24 * 60 * 60 * 1000 // 24 hours
-  }),
   secret: process.env.SESSION_SECRET || 'your-secret-key',
   resave: false,
   saveUninitialized: false,
