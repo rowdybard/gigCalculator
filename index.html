@@ -66,12 +66,12 @@
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label class="text-sm text-slate-300 font-medium">Hours Worked</label>
-              <input id="hours" type="number" step="0.1" min="0" class="w-full mt-1 rounded-lg bg-slate-700 ring-1 ring-white/10 p-3 text-lg" value="0" placeholder="0.0" oninput="validateNumber(this, 0)">
+              <input id="hours" type="number" step="0.1" min="0" class="w-full mt-1 rounded-lg bg-slate-700 ring-1 ring-white/10 p-3 text-lg" value="0" placeholder="0.0" oninput="validateDecimal(this, 0)">
               <p class="text-xs text-slate-500 mt-1">Include all time from start to finish</p>
             </div>
             <div>
               <label class="text-sm text-slate-300 font-medium">Total Miles Driven</label>
-              <input id="miles" type="number" step="0.1" min="0" class="w-full mt-1 rounded-lg bg-slate-700 ring-1 ring-white/10 p-3 text-lg" value="0" placeholder="0.0" oninput="validateNumber(this, 0)">
+              <input id="miles" type="number" step="0.1" min="0" class="w-full mt-1 rounded-lg bg-slate-700 ring-1 ring-white/10 p-3 text-lg" value="0" placeholder="0.0" oninput="validateDecimal(this, 0)">
               <p class="text-xs text-slate-500 mt-1">All miles including deadhead</p>
             </div>
             <div>
@@ -86,17 +86,17 @@
             </div>
             <div>
               <label class="text-sm text-slate-300 font-medium">On-Trip Miles (Optional)</label>
-              <input id="onTripMiles" type="number" step="0.1" min="0" class="w-full mt-1 rounded-lg bg-slate-700 ring-1 ring-white/10 p-3 text-lg" value="" placeholder="0.0" oninput="validateNumber(this, 0)">
+              <input id="onTripMiles" type="number" step="0.1" min="0" class="w-full mt-1 rounded-lg bg-slate-700 ring-1 ring-white/10 p-3 text-lg" value="" placeholder="0.0" oninput="validateDecimal(this, 0)">
               <p class="text-xs text-slate-500 mt-1">Miles while actively delivering</p>
             </div>
             <div>
               <label class="text-sm text-slate-300 font-medium">Number of Stops (Optional)</label>
-              <input id="stops" type="number" step="1" min="0" class="w-full mt-1 rounded-lg bg-slate-700 ring-1 ring-white/10 p-3 text-lg" value="" placeholder="0" oninput="validateNumber(this, 0)">
+              <input id="stops" type="number" step="1" min="0" class="w-full mt-1 rounded-lg bg-slate-700 ring-1 ring-white/10 p-3 text-lg" value="" placeholder="0" oninput="validateDecimal(this, 0)">
               <p class="text-xs text-slate-500 mt-1">Total deliveries/pickups completed</p>
             </div>
             <div>
               <label class="text-sm text-slate-300 font-medium">Fees & Commissions ($)</label>
-              <input id="fees" type="number" step="0.01" min="0" class="w-full mt-1 rounded-lg bg-slate-700 ring-1 ring-white/10 p-3 text-lg" value="0" placeholder="0.00" oninput="validateNumber(this, 0)">
+              <input id="fees" type="number" step="0.01" min="0" class="w-full mt-1 rounded-lg bg-slate-700 ring-1 ring-white/10 p-3 text-lg" value="0" placeholder="0.00" oninput="validateDecimal(this, 0)">
               <p class="text-xs text-slate-500 mt-1">Any platform fees or commissions</p>
             </div>
           </div>
@@ -720,10 +720,10 @@
         fuel_cost: parseFloat($("fuelCost").textContent.replace('$', '')) || 0,
         wear_tear_cost: parseFloat($("wear").value) || 0,
         tax_rate: parseFloat($("tax").value) || 0,
-        gross_per_mile: parseFloat($("grossPerMile").textContent.replace('$', '').replace('/mile', '')) || 0,
-        net_per_mile: parseFloat($("netPerMile").textContent.replace('$', '').replace('/mile', '')) || 0,
-        gross_per_mile_all: parseFloat($("grossPerMileAll").textContent.replace('$', '').replace('/mile', '')) || 0,
-        net_per_mile_all: parseFloat($("netPerMileAll").textContent.replace('$', '').replace('/mile', '')) || 0,
+        gross_per_mile: parseFloat($("grossPerMile").textContent.replace('$', '').replace('/mi', '')) || 0,
+        net_per_mile: parseFloat($("dollarsPerMile").textContent.replace('$', '').replace('/mi', '')) || 0,
+        gross_per_mile_all: parseFloat($("activeGrossDpm").textContent.replace('$', '').replace('/mi', '')) || 0,
+        net_per_mile_all: parseFloat($("activeDpm").textContent.replace('$', '').replace('/mi', '')) || 0,
         score: calculateScore().score || 0
       };
 
