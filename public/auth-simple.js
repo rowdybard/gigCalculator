@@ -113,3 +113,12 @@ window.checkAuthStatus = checkAuthStatus;
 window.showUserInfo = showUserInfo;
 window.showLoginButton = showLoginButton;
 window.showNotification = showNotification;
+
+// Debug: Check if functions are available
+console.log('Functions made global:');
+console.log('- signInWithGoogle:', typeof window.signInWithGoogle);
+console.log('- signOut:', typeof window.signOut);
+console.log('- checkAuthStatus:', typeof window.checkAuthStatus);
+
+// Initialize auth status
+checkAuthStatus();
