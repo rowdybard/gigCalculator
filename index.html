@@ -1026,28 +1026,208 @@
         const canvas = generateScorecardImage();
         const scoreData = calculateScore();
         
-        // Convert canvas to blob for sharing
+        // Convert canvas to blob and create object URL
         canvas.toBlob(async (blob) => {
-          const shareText = `I just scored ${scoreData.score}/100 (Grade: ${scoreData.grade}) on my gig shift! 🚛💪`;
+          const imageUrl = URL.createObjectURL(blob);
           
-          if (navigator.share && navigator.canShare && navigator.canShare({ files: [new File([blob], 'scorecard.png', { type: 'image/png' })] })) {
-            // Native sharing with image file (mobile)
-            try {
-              const file = new File([blob], 'gig-scorecard.png', { type: 'image/png' });
-              await navigator.share({
-                title: 'My Gig Performance Scorecard',
-                text: shareText,
-                files: [file]
-              });
-              showNotification('Sharecard shared successfully! 🎉', 'success');
-            } catch (err) {
-              console.log('Native share failed, showing fallback');
-              showImageShareModal(blob, shareText);
-            }
-          } else {
-            // Fallback for desktop - show image sharing modal
-            showImageShareModal(blob, shareText);
-          }
+          // Open custom share page in new window/tab
+          const shareWindow = window.open('', '_blank');
+          shareWindow.document.write(`
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Share Scorecard Image</title>
+              <style>
+                * {
+                  margin: 0;
+                  padding: 0;
+                  box-sizing: border-box;
+                }
+                
+                body {
+                  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                  background: #0f172a;
+                  color: white;
+                  min-height: 100vh;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  padding: 20px;
+                }
+                
+                .container {
+                  text-align: center;
+                  max-width: 600px;
+                  width: 100%;
+                }
+                
+                .url-container {
+                  background: #1e293b;
+                  border: 2px solid #334155;
+                  border-radius: 12px;
+                  padding: 20px;
+                  margin-bottom: 20px;
+                }
+                
+                .url-text {
+                  font-family: 'Courier New', monospace;
+                  font-size: 14px;
+                  color: #94a3b8;
+                  background: #0f172a;
+                  padding: 15px;
+                  border-radius: 8px;
+                  border: 1px solid #475569;
+                  word-break: break-all;
+                  margin-bottom: 15px;
+                  user-select: all;
+                }
+                
+                .copy-btn {
+                  background: #3b82f6;
+                  color: white;
+                  border: none;
+                  padding: 12px 24px;
+                  border-radius: 8px;
+                  font-size: 16px;
+                  font-weight: 600;
+                  cursor: pointer;
+                  transition: all 0.2s;
+                  display: inline-flex;
+                  align-items: center;
+                  gap: 8px;
+                }
+                
+                .copy-btn:hover {
+                  background: #2563eb;
+                  transform: translateY(-1px);
+                }
+                
+                .copy-btn:active {
+                  transform: translateY(0);
+                }
+                
+                .copy-btn.copied {
+                  background: #10b981;
+                }
+                
+                .notification {
+                  position: fixed;
+                  top: 20px;
+                  right: 20px;
+                  background: #10b981;
+                  color: white;
+                  padding: 12px 20px;
+                  border-radius: 8px;
+                  font-weight: 500;
+                  opacity: 0;
+                  transform: translateX(100%);
+                  transition: all 0.3s;
+                  z-index: 1000;
+                }
+                
+                .notification.show {
+                  opacity: 1;
+                  transform: translateX(0);
+                }
+                
+                .image-preview {
+                  max-width: 100%;
+                  max-height: 200px;
+                  border-radius: 8px;
+                  border: 1px solid #334155;
+                  margin-bottom: 20px;
+                }
+                
+                h1 {
+                  color: #f1f5f9;
+                  margin-bottom: 20px;
+                  font-size: 24px;
+                  font-weight: 700;
+                }
+                
+                p {
+                  color: #94a3b8;
+                  margin-bottom: 20px;
+                  line-height: 1.5;
+                }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <h1>📸 Scorecard Image URL</h1>
+                <p>Copy this URL to share your scorecard image:</p>
+                
+                <img src="${imageUrl}" alt="Scorecard Preview" class="image-preview">
+                
+                <div class="url-container">
+                  <div class="url-text" id="imageUrl">${imageUrl}</div>
+                  <button class="copy-btn" id="copyBtn">
+                    📋 Copy URL
+                  </button>
+                </div>
+              </div>
+              
+              <div class="notification" id="notification">
+                URL copied to clipboard! ✅
+              </div>
+              
+              <script>
+                const copyBtn = document.getElementById('copyBtn');
+                const notification = document.getElementById('notification');
+                const urlText = document.getElementById('imageUrl');
+                
+                copyBtn.addEventListener('click', async () => {
+                  try {
+                    await navigator.clipboard.writeText('${imageUrl}');
+                    
+                    // Show success feedback
+                    copyBtn.textContent = '✅ Copied!';
+                    copyBtn.classList.add('copied');
+                    
+                    notification.classList.add('show');
+                    
+                    // Reset after 2 seconds
+                    setTimeout(() => {
+                      copyBtn.textContent = '📋 Copy URL';
+                      copyBtn.classList.remove('copied');
+                      notification.classList.remove('show');
+                    }, 2000);
+                    
+                  } catch (err) {
+                    console.error('Failed to copy:', err);
+                    
+                    // Fallback: select the text
+                    const range = document.createRange();
+                    range.selectNodeContents(urlText);
+                    const selection = window.getSelection();
+                    selection.removeAllRanges();
+                    selection.addRange(range);
+                    
+                    copyBtn.textContent = '📝 Selected - Press Ctrl+C';
+                    setTimeout(() => {
+                      copyBtn.textContent = '📋 Copy URL';
+                    }, 3000);
+                  }
+                });
+                
+                // Also allow clicking the URL text to select it
+                urlText.addEventListener('click', () => {
+                  const range = document.createRange();
+                  range.selectNodeContents(urlText);
+                  const selection = window.getSelection();
+                  selection.removeAllRanges();
+                  selection.addRange(range);
+                });
+              </script>
+            </body>
+            </html>
+          `);
+          
+          shareWindow.document.close();
+          showNotification('Share page opened in new tab! 🚀', 'success');
+          
         }, 'image/png');
         
       } catch (error) {
