@@ -1083,180 +1083,60 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Share Scorecard Image</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #0f172a;
-      color: white;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-    
-    .container {
-      text-align: center;
-      max-width: 600px;
-      width: 100%;
-    }
-    
-    .url-container {
-      background: #1e293b;
-      border: 2px solid #334155;
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 20px;
-    }
-    
-    .url-text {
-      font-family: 'Courier New', monospace;
-      font-size: 14px;
-      color: #94a3b8;
-      background: #0f172a;
-      padding: 15px;
-      border-radius: 8px;
-      border: 1px solid #475569;
-      word-break: break-all;
-      margin-bottom: 15px;
-      user-select: all;
-    }
-    
-    .copy-btn {
-      background: #3b82f6;
-      color: white;
-      border: none;
-      padding: 12px 24px;
-      border-radius: 8px;
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-    }
-    
-    .copy-btn:hover {
-      background: #2563eb;
-      transform: translateY(-1px);
-    }
-    
-    .copy-btn:active {
-      transform: translateY(0);
-    }
-    
-    .copy-btn.copied {
-      background: #10b981;
-    }
-    
-    .notification {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: #10b981;
-      color: white;
-      padding: 12px 20px;
-      border-radius: 8px;
-      font-weight: 500;
-      opacity: 0;
-      transform: translateX(100%);
-      transition: all 0.3s;
-      z-index: 1000;
-    }
-    
-    .notification.show {
-      opacity: 1;
-      transform: translateX(0);
-    }
-    
-    .image-preview {
-      max-width: 100%;
-      max-height: 200px;
-      border-radius: 8px;
-      border: 1px solid #334155;
-      margin-bottom: 20px;
-    }
-    
-    h1 {
-      color: #f1f5f9;
-      margin-bottom: 20px;
-      font-size: 24px;
-      font-weight: 700;
-    }
-    
-    p {
-      color: #94a3b8;
-      margin-bottom: 20px;
-      line-height: 1.5;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: white; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+    .container { text-align: center; max-width: 600px; width: 100%; }
+    .url-container { background: #1e293b; border: 2px solid #334155; border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+    .url-text { font-family: 'Courier New', monospace; font-size: 14px; color: #94a3b8; background: #0f172a; padding: 15px; border-radius: 8px; border: 1px solid #475569; word-break: break-all; margin-bottom: 15px; user-select: all; }
+    .copy-btn { background: #3b82f6; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; }
+    .copy-btn:hover { background: #2563eb; transform: translateY(-1px); }
+    .copy-btn:active { transform: translateY(0); }
+    .copy-btn.copied { background: #10b981; }
+    .notification { position: fixed; top: 20px; right: 20px; background: #10b981; color: white; padding: 12px 20px; border-radius: 8px; font-weight: 500; opacity: 0; transform: translateX(100%); transition: all 0.3s; z-index: 1000; }
+    .notification.show { opacity: 1; transform: translateX(0); }
+    .image-preview { max-width: 100%; max-height: 200px; border-radius: 8px; border: 1px solid #334155; margin-bottom: 20px; }
+    h1 { color: #f1f5f9; margin-bottom: 20px; font-size: 24px; font-weight: 700; }
+    p { color: #94a3b8; margin-bottom: 20px; line-height: 1.5; }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>📸 Scorecard Image URL</h1>
     <p>Copy this URL to share your scorecard image:</p>
-    
     <img src="REPLACE_IMAGE_URL" alt="Scorecard Preview" class="image-preview">
-    
     <div class="url-container">
       <div class="url-text" id="imageUrl">REPLACE_IMAGE_URL</div>
-      <button class="copy-btn" id="copyBtn">
-        📋 Copy URL
-      </button>
+      <button class="copy-btn" id="copyBtn">📋 Copy URL</button>
     </div>
   </div>
-  
-  <div class="notification" id="notification">
-    URL copied to clipboard! ✅
-  </div>
-  
+  <div class="notification" id="notification">URL copied to clipboard! ✅</div>
   <script>
     const imageUrl = "REPLACE_IMAGE_URL";
     const copyBtn = document.getElementById('copyBtn');
     const notification = document.getElementById('notification');
     const urlText = document.getElementById('imageUrl');
-    
     copyBtn.addEventListener('click', async () => {
       try {
         await navigator.clipboard.writeText(imageUrl);
-        
-        // Show success feedback
         copyBtn.textContent = '✅ Copied!';
         copyBtn.classList.add('copied');
-        
         notification.classList.add('show');
-        
-        // Reset after 2 seconds
         setTimeout(() => {
           copyBtn.textContent = '📋 Copy URL';
           copyBtn.classList.remove('copied');
           notification.classList.remove('show');
         }, 2000);
-        
       } catch (err) {
         console.error('Failed to copy:', err);
-        
-        // Fallback: select the text
         const range = document.createRange();
         range.selectNodeContents(urlText);
         const selection = window.getSelection();
         selection.removeAllRanges();
         selection.addRange(range);
-        
         copyBtn.textContent = '📝 Selected - Press Ctrl+C';
-        setTimeout(() => {
-          copyBtn.textContent = '📋 Copy URL';
-        }, 3000);
+        setTimeout(() => { copyBtn.textContent = '📋 Copy URL'; }, 3000);
       }
     });
-    
-    // Also allow clicking the URL text to select it
     urlText.addEventListener('click', () => {
       const range = document.createRange();
       range.selectNodeContents(urlText);
@@ -1290,46 +1170,61 @@
       // Create sharing modal
       const shareModal = document.createElement('div');
       shareModal.className = 'fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4';
-      shareModal.innerHTML = `
-        <div class="bg-slate-800 rounded-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-          <div class="flex justify-between items-center mb-4">
-            <h3 class="text-xl font-bold text-white">Share Your Scorecard</h3>
-            <button onclick="this.closest('.fixed').remove(); URL.revokeObjectURL('${imageUrl}')" class="text-slate-400 hover:text-white text-2xl">
-              <i class="fas fa-times"></i>
-            </button>
-          </div>
+      const modalId = Date.now();
+      shareModal.innerHTML = 
+        '<div class="bg-slate-800 rounded-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">' +
+          '<div class="flex justify-between items-center mb-4">' +
+            '<h3 class="text-xl font-bold text-white">Share Your Scorecard</h3>' +
+            '<button class="close-btn text-slate-400 hover:text-white text-2xl">' +
+              '<i class="fas fa-times"></i>' +
+            '</button>' +
+          '</div>' +
           
-          <!-- Preview Image -->
-          <div class="mb-4 text-center">
-            <img src="${imageUrl}" alt="Scorecard" class="max-w-full h-auto rounded-lg border border-slate-600" style="max-height: 300px;">
-          </div>
+          '<!-- Preview Image -->' +
+          '<div class="mb-4 text-center">' +
+            '<img class="scorecard-preview max-w-full h-auto rounded-lg border border-slate-600" style="max-height: 300px;" alt="Scorecard">' +
+          '</div>' +
           
-          <!-- Share Instructions -->
-          <div class="space-y-4">
-            <div class="bg-slate-700 rounded-lg p-4">
-              <h4 class="font-semibold text-white mb-2">📱 On Mobile:</h4>
-              <p class="text-slate-300 text-sm">Long press the image above, then select "Save to Photos" or "Share Image"</p>
-            </div>
+          '<!-- Share Instructions -->' +
+          '<div class="space-y-4">' +
+            '<div class="bg-slate-700 rounded-lg p-4">' +
+              '<h4 class="font-semibold text-white mb-2">📱 On Mobile:</h4>' +
+              '<p class="text-slate-300 text-sm">Long press the image above, then select "Save to Photos" or "Share Image"</p>' +
+            '</div>' +
             
-            <div class="bg-slate-700 rounded-lg p-4">
-              <h4 class="font-semibold text-white mb-2">💻 On Desktop:</h4>
-              <p class="text-slate-300 text-sm">Right-click the image above and select "Save image as..." or "Copy image"</p>
-            </div>
+            '<div class="bg-slate-700 rounded-lg p-4">' +
+              '<h4 class="font-semibold text-white mb-2">💻 On Desktop:</h4>' +
+              '<p class="text-slate-300 text-sm">Right-click the image above and select "Save image as..." or "Copy image"</p>' +
+            '</div>' +
             
-            <div class="bg-indigo-700 rounded-lg p-4">
-              <h4 class="font-semibold text-white mb-2">📝 Share Text:</h4>
-              <p class="text-indigo-200 text-sm bg-indigo-800 p-2 rounded border select-all">${shareText}</p>
-              <button id="copyTextBtn-${Date.now()}" class="mt-2 px-3 py-1 bg-indigo-600 hover:bg-indigo-500 rounded text-sm text-white">
-                Copy Text
-              </button>
-            </div>
-          </div>
+            '<div class="bg-indigo-700 rounded-lg p-4">' +
+              '<h4 class="font-semibold text-white mb-2">📝 Share Text:</h4>' +
+              '<p class="text-indigo-200 text-sm bg-indigo-800 p-2 rounded border select-all" id="shareText-' + modalId + '"></p>' +
+              '<button id="copyTextBtn-' + modalId + '" class="mt-2 px-3 py-1 bg-indigo-600 hover:bg-indigo-500 rounded text-sm text-white">' +
+                'Copy Text' +
+              '</button>' +
+            '</div>' +
+          '</div>' +
           
-          <button onclick="this.closest('.fixed').remove(); URL.revokeObjectURL('${imageUrl}')" class="w-full mt-4 px-4 py-2 bg-slate-600 hover:bg-slate-500 rounded-lg text-white transition-all">
-            Close
-          </button>
-        </div>
-      `;
+          '<button class="close-btn w-full mt-4 px-4 py-2 bg-slate-600 hover:bg-slate-500 rounded-lg text-white transition-all">' +
+            'Close' +
+          '</button>' +
+        '</div>';
+        
+      // Set image and text after creating the modal
+      const previewImg = shareModal.querySelector('.scorecard-preview');
+      const shareTextEl = shareModal.querySelector('#shareText-' + modalId);
+      previewImg.src = imageUrl;
+      shareTextEl.textContent = shareText;
+      
+      // Add close button handlers
+      const closeButtons = shareModal.querySelectorAll('.close-btn');
+      closeButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          shareModal.remove();
+          URL.revokeObjectURL(imageUrl);
+        });
+      });
       
       document.body.appendChild(shareModal);
       
@@ -2028,4 +1923,5 @@
   </script>
 </body>
 </html>
+
 
