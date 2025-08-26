@@ -1,4 +1,5 @@
 // Client-side authentication functions
+console.log('Auth script loaded successfully');
 
 // Check if user is signed in
 async function checkAuthStatus() {
@@ -19,6 +20,7 @@ async function checkAuthStatus() {
 
 // Sign in with Google
 async function signInWithGoogle() {
+  console.log('signInWithGoogle function called');
   try {
     // Load Google Identity Services
     await loadGoogleIdentity();
@@ -66,6 +68,7 @@ async function signInWithGoogle() {
 
 // Sign out
 async function signOut() {
+  console.log('signOut function called');
   try {
     const response = await fetch('/api/auth/logout', {
       method: 'POST'

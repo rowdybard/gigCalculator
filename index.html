@@ -448,27 +448,39 @@
     document.getElementById('shareScorecard').addEventListener('click', shareScorecard);
     document.getElementById('copyScorecard').addEventListener('click', copyScorecardLink);
     
-    // Auth event listeners
-    const loginBtn = document.getElementById('loginBtn');
-    const logoutBtn = document.getElementById('logoutBtn');
-    
-    console.log('Login button found:', loginBtn);
-    console.log('Logout button found:', logoutBtn);
-    console.log('signInWithGoogle function:', typeof signInWithGoogle);
-    
-    if (loginBtn) {
-      loginBtn.addEventListener('click', () => {
-        console.log('Login button clicked!');
-        if (typeof signInWithGoogle === 'function') {
+    // Auth event listeners - wait for auth functions to be available
+    function setupAuthListeners() {
+      const loginBtn = document.getElementById('loginBtn');
+      const logoutBtn = document.getElementById('logoutBtn');
+      
+      console.log('Login button found:', loginBtn);
+      console.log('Logout button found:', logoutBtn);
+      console.log('signInWithGoogle function:', typeof signInWithGoogle);
+      console.log('signOut function:', typeof signOut);
+      
+      if (loginBtn && typeof signInWithGoogle === 'function') {
+        loginBtn.addEventListener('click', () => {
+          console.log('Login button clicked!');
           signInWithGoogle();
-        } else {
-          console.error('signInWithGoogle is not a function');
-        }
-      });
+        });
+      } else {
+        console.error('Login button or signInWithGoogle function not available');
+      }
+      
+      if (logoutBtn && typeof signOut === 'function') {
+        logoutBtn.addEventListener('click', signOut);
+      } else {
+        console.error('Logout button or signOut function not available');
+      }
     }
     
-    if (logoutBtn) {
-      logoutBtn.addEventListener('click', signOut);
+    // Try to setup listeners immediately
+    setupAuthListeners();
+    
+    // If functions aren't available yet, retry after a delay
+    if (typeof signInWithGoogle !== 'function' || typeof signOut !== 'function') {
+      setTimeout(setupAuthListeners, 1000);
+      setTimeout(setupAuthListeners, 2000);
     }
 
 
