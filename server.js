@@ -316,6 +316,13 @@ app.get('/auth/google/callback',
         }
         
         console.log('✅ Google OAuth successful for user:', user.email);
+        console.log('🔍 Session after login:', {
+          sessionID: req.sessionID,
+          isAuthenticated: req.isAuthenticated(),
+          hasUser: !!req.user,
+          sessionKeys: req.session ? Object.keys(req.session) : 'no session'
+        });
+        
         return res.redirect('/?auth=success');
       });
     })(req, res, next);
@@ -535,6 +542,14 @@ app.delete('/api/calculations/:id', requireAuth, async (req, res) => {
 
 // Authentication status check
 app.get('/api/auth/status', (req, res) => {
+  console.log('🔍 Auth status check:', {
+    sessionID: req.sessionID,
+    isAuthenticated: req.isAuthenticated(),
+    hasUser: !!req.user,
+    userEmail: req.user?.email,
+    sessionData: req.session ? Object.keys(req.session) : 'no session'
+  });
+  
   res.json({
     authenticated: req.isAuthenticated(),
     user: req.isAuthenticated() ? {
