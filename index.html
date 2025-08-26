@@ -284,6 +284,35 @@
         </button>
       </div>
     </div>
+
+    <!-- Saved Calculations Display -->
+    <div class="mt-8 bg-slate-800/60 rounded-2xl p-6 ring-1 ring-white/10">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-xl font-semibold text-slate-200 flex items-center">
+          <i class="fas fa-history mr-2 text-indigo-400"></i>Saved Calculations
+        </h3>
+        <button id="refreshCalculations" class="px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm font-medium transition-all">
+          <i class="fas fa-sync-alt mr-1"></i>Refresh
+        </button>
+      </div>
+      
+      <div id="savedCalculationsContainer">
+        <div id="calculationsLoading" class="text-center py-8 text-slate-400">
+          <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+          <p>Loading saved calculations...</p>
+        </div>
+        
+        <div id="noCalculations" class="text-center py-8 text-slate-500 hidden">
+          <i class="fas fa-calculator text-3xl mb-2"></i>
+          <p>No saved calculations yet</p>
+          <p class="text-sm">Complete a calculation and click "Save" to see it here</p>
+        </div>
+        
+        <div id="calculationsList" class="space-y-3 hidden">
+          <!-- Calculations will be populated here -->
+        </div>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -847,9 +876,118 @@
       return parseFloat(amount).toFixed(1) + '%';
     }
 
+    // Saved Calculations Display
+    async function loadSavedCalculations() {
+      const calculationsLoading = document.getElementById('calculationsLoading');
+      const noCalculations = document.getElementById('noCalculations');
+      const calculationsList = document.getElementById('calculationsList');
+      
+      // Show loading
+      calculationsLoading.classList.remove('hidden');
+      noCalculations.classList.add('hidden');
+      calculationsList.classList.add('hidden');
+      
+      try {
+        let calculations = [];
+        
+        // Try to get from database first
+        if (typeof getUserCalculations === 'function') {
+          calculations = await getUserCalculations(10); // Get last 10
+        }
+        
+        // Fallback to localStorage if no database or no auth
+        if (calculations.length === 0) {
+          const saved = localStorage.getItem('calculations');
+          if (saved) {
+            calculations = JSON.parse(saved).slice(-10); // Get last 10
+          }
+        }
+        
+        // Hide loading
+        calculationsLoading.classList.add('hidden');
+        
+        if (calculations.length === 0) {
+          noCalculations.classList.remove('hidden');
+        } else {
+          displayCalculations(calculations);
+          calculationsList.classList.remove('hidden');
+        }
+      } catch (error) {
+        console.error('Error loading calculations:', error);
+        calculationsLoading.classList.add('hidden');
+        noCalculations.classList.remove('hidden');
+      }
+    }
+
+    function displayCalculations(calculations) {
+      const calculationsList = document.getElementById('calculationsList');
+      calculationsList.innerHTML = '';
+      
+      calculations.reverse().forEach((calc, index) => {
+        const calcElement = document.createElement('div');
+        calcElement.className = 'bg-slate-700/40 rounded-lg p-4 border border-slate-600/30 hover:bg-slate-700/60 transition-all';
+        
+        const date = calc.created_at ? new Date(calc.created_at).toLocaleDateString() : 'Recent';
+        const grossHourly = calc.gross_hourly || 0;
+        const netHourly = calc.net_hourly || 0;
+        const score = calc.score || 0;
+        
+        calcElement.innerHTML = `
+          <div class="flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+              <div class="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold">
+                ${index + 1}
+              </div>
+              <div>
+                <div class="text-slate-200 font-medium">${date}</div>
+                <div class="text-sm text-slate-400">
+                  Gross: $${grossHourly.toFixed(2)}/hr • Net: $${netHourly.toFixed(2)}/hr
+                </div>
+              </div>
+            </div>
+            <div class="text-right">
+              <div class="text-lg font-bold ${score >= 70 ? 'text-green-400' : score >= 50 ? 'text-yellow-400' : 'text-red-400'}">
+                Score: ${score}
+              </div>
+              <button onclick="loadCalculation(${index})" class="text-xs text-indigo-400 hover:text-indigo-300 mt-1">
+                <i class="fas fa-upload mr-1"></i>Load
+              </button>
+            </div>
+          </div>
+        `;
+        
+        calculationsList.appendChild(calcElement);
+      });
+      
+      // Store calculations for loading
+      window.savedCalculationsData = calculations;
+    }
+
+    function loadCalculation(index) {
+      const calculations = window.savedCalculationsData;
+      if (!calculations || !calculations[index]) return;
+      
+      const calc = calculations[index];
+      
+      // Load the calculation data back into the form
+      // This would require extracting the original input values
+      showNotification('Load calculation feature coming soon!', 'info');
+    }
+
     // Initialize
     load();
     checkAuthStatus();
+    
+    // Set up refresh button and load calculations
+    setTimeout(() => {
+      const refreshBtn = document.getElementById('refreshCalculations');
+      if (refreshBtn) {
+        refreshBtn.addEventListener('click', loadSavedCalculations);
+      }
+      
+      // Load calculations after page is ready
+      loadSavedCalculations();
+    }, 1000);
   </script>
 </body>
 </html>
