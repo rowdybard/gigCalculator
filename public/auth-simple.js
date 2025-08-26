@@ -3,7 +3,7 @@ console.log('Simple auth script loaded');
 
 // Initialize Firebase Auth
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-import { getAuth, signInWithPopup, GoogleAuthProvider, signOut as firebaseSignOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+import { getAuth, signInWithRedirect, signInWithPopup, GoogleAuthProvider, signOut as firebaseSignOut, onAuthStateChanged, getRedirectResult } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 
 // Firebase config (you'll need to add this)
 const firebaseConfig = {
@@ -24,10 +24,16 @@ const provider = new GoogleAuthProvider();
 async function signInWithGoogle() {
   try {
     console.log('Signing in with Google...');
-    const result = await signInWithPopup(auth, provider);
-    console.log('Signed in successfully:', result.user.email);
-    showUserInfo(result.user);
-    showNotification('Signed in successfully!', 'success');
+    // Try popup first, fallback to redirect
+    try {
+      const result = await signInWithPopup(auth, provider);
+      console.log('Signed in successfully:', result.user.email);
+      showUserInfo(result.user);
+      showNotification('Signed in successfully!', 'success');
+    } catch (popupError) {
+      console.log('Popup failed, trying redirect:', popupError);
+      await signInWithRedirect(auth, provider);
+    }
   } catch (error) {
     console.error('Sign-in error:', error);
     showNotification('Sign-in failed. Please try again.', 'error');
@@ -48,7 +54,20 @@ async function signOut() {
 }
 
 // Check auth status
-function checkAuthStatus() {
+async function checkAuthStatus() {
+  // Check for redirect result first
+  try {
+    const result = await getRedirectResult(auth);
+    if (result) {
+      console.log('Redirect sign-in successful:', result.user.email);
+      showUserInfo(result.user);
+      showNotification('Signed in successfully!', 'success');
+    }
+  } catch (error) {
+    console.error('Redirect result error:', error);
+  }
+  
+  // Listen for auth state changes
   onAuthStateChanged(auth, (user) => {
     if (user) {
       console.log('User is signed in:', user.email);
