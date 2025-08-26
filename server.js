@@ -81,13 +81,29 @@ initDatabase();
 // API Routes
 
 // Health check
-app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    message: 'Gig Calculator API is running',
-    poweredBy: 'Hey Dispatch',
-    timestamp: new Date().toISOString()
-  });
+app.get('/api/health', async (req, res) => {
+  try {
+    // Test database connection
+    const result = await pool.query('SELECT NOW() as current_time');
+    res.json({
+      status: 'ok',
+      message: 'Gig Calculator API is running',
+      poweredBy: 'Hey Dispatch',
+      timestamp: new Date().toISOString(),
+      database: 'connected',
+      dbTime: result.rows[0].current_time
+    });
+  } catch (error) {
+    console.error('Database connection error:', error);
+    res.json({
+      status: 'error',
+      message: 'Gig Calculator API is running but database connection failed',
+      poweredBy: 'Hey Dispatch',
+      timestamp: new Date().toISOString(),
+      database: 'disconnected',
+      error: error.message
+    });
+  }
 });
 
 // Google OAuth callback
@@ -178,6 +194,8 @@ app.get('/', async (req, res) => {
 
     } catch (error) {
       console.error('OAuth callback error:', error);
+      console.error('Error details:', error.message);
+      console.error('Error stack:', error.stack);
       return res.redirect('/?error=auth_failed');
     }
   }
