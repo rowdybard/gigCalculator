@@ -3,7 +3,7 @@ console.log('Simple auth script loaded');
 
 // Initialize Firebase Auth
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+import { getAuth, signInWithPopup, GoogleAuthProvider, signOut as firebaseSignOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 
 // Firebase config (you'll need to add this)
 const firebaseConfig = {
@@ -37,7 +37,7 @@ async function signInWithGoogle() {
 // Simple sign out function
 async function signOut() {
   try {
-    await signOut(auth);
+    await firebaseSignOut(auth);
     console.log('Signed out successfully');
     showLoginButton();
     showNotification('Signed out successfully', 'success');
