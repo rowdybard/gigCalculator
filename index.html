@@ -620,20 +620,58 @@
     const loginBtn = document.getElementById('loginBtn');
     const logoutBtn = document.getElementById('logoutBtn');
     
+    console.log('🔍 Auth Debug Info:');
     console.log('Login button found:', loginBtn);
     console.log('Logout button found:', logoutBtn);
     console.log('signInWithGoogle function:', typeof signInWithGoogle);
     console.log('signOut function:', typeof signOut);
+    console.log('Window.signInWithGoogle:', typeof window.signInWithGoogle);
     
     if (loginBtn) {
-      loginBtn.addEventListener('click', () => {
-        console.log('Login button clicked!');
-        signInWithGoogle();
+      loginBtn.addEventListener('click', (e) => {
+        console.log('🖱️ Login button clicked!');
+        e.preventDefault();
+        
+        // Try different ways to call the sign-in function
+        if (typeof signInWithGoogle === 'function') {
+          console.log('📞 Calling signInWithGoogle directly');
+          signInWithGoogle();
+        } else if (typeof window.signInWithGoogle === 'function') {
+          console.log('📞 Calling window.signInWithGoogle');
+          window.signInWithGoogle();
+        } else {
+          console.error('❌ signInWithGoogle function not found!');
+          // Fallback: direct redirect to Google OAuth
+          console.log('🔄 Fallback: Redirecting to /auth/google');
+          window.location.href = '/auth/google';
+        }
       });
+      
+      // Add visual feedback for debugging
+      loginBtn.addEventListener('mouseenter', () => {
+        console.log('🖱️ Mouse entered login button');
+      });
+      
+      loginBtn.addEventListener('mousedown', () => {
+        console.log('🖱️ Mouse down on login button');
+      });
+    } else {
+      console.error('❌ Login button not found!');
     }
     
     if (logoutBtn) {
-      logoutBtn.addEventListener('click', signOut);
+      logoutBtn.addEventListener('click', (e) => {
+        console.log('🖱️ Logout button clicked!');
+        e.preventDefault();
+        
+        if (typeof signOut === 'function') {
+          signOut();
+        } else if (typeof window.signOut === 'function') {
+          window.signOut();
+        } else {
+          console.error('❌ signOut function not found!');
+        }
+      });
     }
 
 
@@ -1919,6 +1957,45 @@
         console.error('Error deleting calculation:', error);
         showNotification('Error deleting calculation. Please try again.', 'error');
       }
+    }
+
+    // Fallback auth functions in case auth.js doesn't load
+    if (typeof signInWithGoogle === 'undefined') {
+      console.log('⚠️ signInWithGoogle not found, creating fallback');
+      window.signInWithGoogle = function() {
+        console.log('🔄 Fallback signInWithGoogle called');
+        window.location.href = '/auth/google';
+      };
+    }
+    
+    if (typeof signOut === 'undefined') {
+      console.log('⚠️ signOut not found, creating fallback');
+      window.signOut = async function() {
+        console.log('🔄 Fallback signOut called');
+        try {
+          const response = await fetch('/auth/logout', {
+            method: 'POST',
+            credentials: 'include'
+          });
+          if (response.ok) {
+            window.location.reload();
+          }
+        } catch (error) {
+          console.error('Logout error:', error);
+        }
+      };
+    }
+    
+    if (typeof checkAuthStatus === 'undefined') {
+      console.log('⚠️ checkAuthStatus not found, creating fallback');
+      window.checkAuthStatus = async function() {
+        console.log('🔄 Fallback checkAuthStatus called');
+        // Simple auth check - just show the calculator for now
+        const lockOverlay = document.getElementById('lockOverlay');
+        if (lockOverlay) {
+          lockOverlay.style.display = 'none';
+        }
+      };
     }
 
     // Initialize
