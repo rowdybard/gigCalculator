@@ -28,9 +28,9 @@
       <div class="flex justify-between items-center mb-4">
         <div></div> <!-- Spacer -->
         <div id="auth-section" class="flex items-center space-x-4 relative z-30">
-          <button id="loginBtn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-all relative z-40 cursor-pointer" onclick="try{(window.signInWithGoogle||window.Auth?.signIn||(()=>{window.location.href='/auth/google'}))()}catch(e){window.location.href='/auth/google'}">
+          <a id="loginBtn" href="/auth/google" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-all relative z-40 cursor-pointer">
             <i class="fab fa-google mr-2"></i>Sign in with Google
-          </button>
+          </a>
           <div id="userInfo" class="flex items-center space-x-3 hidden">
             <img id="userPicture" class="w-8 h-8 rounded-full" />
             <span id="userName" class="text-slate-300 font-medium"></span>
@@ -1110,48 +1110,55 @@
     </div>
   </div>
   <div class="notification" id="notification">URL copied to clipboard! ✅</div>
-  <script>
-    const imageUrl = "REPLACE_IMAGE_URL";
-    const copyBtn = document.getElementById('copyBtn');
-    const notification = document.getElementById('notification');
-    const urlText = document.getElementById('imageUrl');
-    copyBtn.addEventListener('click', async () => {
-      try {
-        await navigator.clipboard.writeText(imageUrl);
-        copyBtn.textContent = '✅ Copied!';
-        copyBtn.classList.add('copied');
-        notification.classList.add('show');
-        setTimeout(() => {
-          copyBtn.textContent = '📋 Copy URL';
-          copyBtn.classList.remove('copied');
-          notification.classList.remove('show');
-        }, 2000);
-      } catch (err) {
-        console.error('Failed to copy:', err);
-        const range = document.createRange();
-        range.selectNodeContents(urlText);
-        const selection = window.getSelection();
-        selection.removeAllRanges();
-        selection.addRange(range);
-        copyBtn.textContent = '📝 Selected - Press Ctrl+C';
-        setTimeout(() => { copyBtn.textContent = '📋 Copy URL'; }, 3000);
-      }
-    });
-    urlText.addEventListener('click', () => {
-      const range = document.createRange();
-      range.selectNodeContents(urlText);
-      const selection = window.getSelection();
-      selection.removeAllRanges();
-      selection.addRange(range);
-    });
-  </script>
 </body>
 </html>`;
           
           // Replace placeholders with actual imageUrl
           const finalHtml = htmlContent.replace(/REPLACE_IMAGE_URL/g, imageUrl);
           shareWindow.document.write(finalHtml);
-          
+
+          // Wire up copy interactions in the new window (avoid inline <script> to prevent </script> parse issues)
+          const copyBtn = shareWindow.document.getElementById('copyBtn');
+          const notificationEl = shareWindow.document.getElementById('notification');
+          const urlTextEl = shareWindow.document.getElementById('imageUrl');
+
+          if (copyBtn && urlTextEl) {
+            copyBtn.addEventListener('click', async () => {
+              try {
+                await shareWindow.navigator.clipboard.writeText(imageUrl);
+                copyBtn.textContent = '✅ Copied!';
+                copyBtn.classList.add('copied');
+                if (notificationEl) notificationEl.classList.add('show');
+                setTimeout(() => {
+                  copyBtn.textContent = '📋 Copy URL';
+                  copyBtn.classList.remove('copied');
+                  if (notificationEl) notificationEl.classList.remove('show');
+                }, 2000);
+              } catch (err) {
+                // Fallback: select text
+                try {
+                  const range = shareWindow.document.createRange();
+                  range.selectNodeContents(urlTextEl);
+                  const selection = shareWindow.getSelection();
+                  selection.removeAllRanges();
+                  selection.addRange(range);
+                  copyBtn.textContent = '📝 Selected - Press Ctrl+C';
+                  setTimeout(() => { copyBtn.textContent = '📋 Copy URL'; }, 3000);
+                } catch (_) {}
+              }
+            });
+
+            urlTextEl.addEventListener('click', () => {
+              try {
+                const range = shareWindow.document.createRange();
+                range.selectNodeContents(urlTextEl);
+                const selection = shareWindow.getSelection();
+                selection.removeAllRanges();
+                selection.addRange(range);
+              } catch (_) {}
+            });
+          }
+
           shareWindow.document.close();
           showNotification('Share page opened in new tab! 🚀', 'success');
           
