@@ -588,6 +588,60 @@ app.get('/api/auth/status', (req, res) => {
   });
 });
 
+// Admin authentication middleware
+function requireAdmin(req, res, next) {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  
+  if (req.user.email !== 'maxpug17@gmail.com') {
+    return res.status(403).json({ error: 'Admin access denied' });
+  }
+  
+  next();
+}
+
+// Simple admin endpoint to view users (protected)
+app.get('/api/admin/users', requireAdmin, async (req, res) => {
+  try {
+    const users = await pool.query(`
+      SELECT 
+        u.id, u.email, u.name, u.created_at, u.last_login,
+        COUNT(c.id) as calculation_count
+      FROM users u
+      LEFT JOIN calculations c ON u.id = c.user_id
+      GROUP BY u.id, u.email, u.name, u.created_at, u.last_login
+      ORDER BY u.created_at DESC
+    `);
+    
+    res.json({
+      total_users: users.rows.length,
+      users: users.rows
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// View specific user's calculations (protected)
+app.get('/api/admin/users/:userId/calculations', requireAdmin, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const calculations = await pool.query(
+      'SELECT * FROM calculations WHERE user_id = $1 ORDER BY created_at DESC',
+      [userId]
+    );
+    
+    res.json({
+      user_id: userId,
+      calculation_count: calculations.rows.length,
+      calculations: calculations.rows
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Health check
 app.get('/api/health', async (req, res) => {
   try {
