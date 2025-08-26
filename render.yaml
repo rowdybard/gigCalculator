@@ -3,7 +3,7 @@ services:
     name: gig-calculator
     env: node
     buildCommand: npm install
-    startCommand: node server.js
+    startCommand: node server-basic.js
     envVars:
       - key: NODE_ENV
         value: production
