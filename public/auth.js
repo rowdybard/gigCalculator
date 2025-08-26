@@ -30,6 +30,7 @@ async function signInWithGoogle() {
     const client = google.accounts.oauth2.initTokenClient({
       client_id: config.googleClientId,
       scope: 'openid email profile',
+      redirect_uri: window.location.origin,
       callback: async (response) => {
         if (response.access_token) {
           // Get user info and ID token
@@ -48,9 +49,11 @@ async function signInWithGoogle() {
           const result = await serverResponse.json();
           
           if (result.success) {
+            console.log('Authentication successful:', result);
             showUserInfo(result.user);
             showNotification('Signed in successfully!', 'success');
           } else {
+            console.log('Authentication failed:', result);
             showNotification('Sign-in failed', 'error');
           }
         }
@@ -127,22 +130,36 @@ async function loadUserCalculations() {
 
 // Show user information in UI
 function showUserInfo(user) {
+  console.log('showUserInfo called with:', user);
+  
   const userInfo = document.getElementById('userInfo');
   const loginBtn = document.getElementById('loginBtn');
   const userPicture = document.getElementById('userPicture');
   const userName = document.getElementById('userName');
   const landingOverlay = document.getElementById('landingOverlay');
   
+  console.log('Elements found:', {
+    userInfo: !!userInfo,
+    loginBtn: !!loginBtn,
+    userPicture: !!userPicture,
+    userName: !!userName,
+    landingOverlay: !!landingOverlay
+  });
+  
   if (userInfo && loginBtn && userPicture && userName) {
     userPicture.src = user.picture || '/default-avatar.png';
     userName.textContent = user.name || 'User';
     userInfo.classList.remove('hidden');
     loginBtn.classList.add('hidden');
+    console.log('User info elements updated');
   }
   
   // Hide landing overlay when user is authenticated
   if (landingOverlay) {
     landingOverlay.style.display = 'none';
+    console.log('Landing overlay hidden');
+  } else {
+    console.log('Landing overlay element not found!');
   }
 }
 
