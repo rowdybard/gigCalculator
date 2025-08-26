@@ -164,8 +164,7 @@ app.use(session({
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-    sameSite: 'lax', // Changed from 'strict' to 'lax' for OAuth redirects
-    domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined
+    sameSite: 'lax' // Removed domain setting - let browser handle it
   },
   name: 'gigcalc.sid',
   proxy: process.env.NODE_ENV === 'production' // Trust proxy for HTTPS
@@ -322,8 +321,12 @@ app.get('/auth/google/callback',
           sessionID: req.sessionID,
           isAuthenticated: req.isAuthenticated(),
           hasUser: !!req.user,
-          sessionKeys: req.session ? Object.keys(req.session) : 'no session'
+          sessionKeys: req.session ? Object.keys(req.session) : 'no session',
+          cookies: req.headers.cookie
         });
+        
+        // Explicitly set cookie header for debugging
+        console.log('🍪 Setting session cookie:', req.sessionID);
         
         return res.redirect('/?auth=success');
       });
@@ -569,7 +572,9 @@ app.get('/api/auth/status', (req, res) => {
     isAuthenticated: req.isAuthenticated(),
     hasUser: !!req.user,
     userEmail: req.user?.email,
-    sessionData: req.session ? Object.keys(req.session) : 'no session'
+    sessionData: req.session ? Object.keys(req.session) : 'no session',
+    cookies: req.headers.cookie,
+    userAgent: req.headers['user-agent']?.substring(0, 50)
   });
   
   res.json({
