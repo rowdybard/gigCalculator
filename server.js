@@ -82,7 +82,7 @@ initDatabase();
 
 // Test OAuth URL
 app.get('/api/test-oauth', (req, res) => {
-  const redirectUri = `${req.protocol}://${req.get('host')}`;
+  const redirectUri = process.env.NODE_ENV === 'production' ? `https://${req.get('host')}` : `${req.protocol}://${req.get('host')}`;
   res.json({
     redirectUri,
     clientId: process.env.GOOGLE_CLIENT_ID,
@@ -142,13 +142,13 @@ app.get('/', async (req, res) => {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: new URLSearchParams({
-          code,
-          client_id: process.env.GOOGLE_CLIENT_ID,
-          client_secret: process.env.GOOGLE_CLIENT_SECRET,
-          redirect_uri: `${req.protocol}://${req.get('host')}`,
-          grant_type: 'authorization_code',
-        }),
+                 body: new URLSearchParams({
+           code,
+           client_id: process.env.GOOGLE_CLIENT_ID,
+           client_secret: process.env.GOOGLE_CLIENT_SECRET,
+           redirect_uri: process.env.NODE_ENV === 'production' ? `https://${req.get('host')}` : `${req.protocol}://${req.get('host')}`,
+           grant_type: 'authorization_code',
+         }),
       });
 
       const tokens = await tokenResponse.json();
