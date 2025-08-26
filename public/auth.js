@@ -3,6 +3,20 @@
 // Check if user is signed in
 async function checkAuthStatus() {
   try {
+    // Check if we're returning from OAuth (URL has access_token or code)
+    const urlParams = new URLSearchParams(window.location.search);
+    const accessToken = urlParams.get('access_token');
+    const code = urlParams.get('code');
+    
+    if (accessToken || code) {
+      console.log('OAuth redirect detected, processing...');
+      // Handle OAuth redirect
+      await handleOAuthRedirect(accessToken, code);
+      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+      return;
+    }
+    
     const response = await fetch('/api/auth/status');
     const data = await response.json();
     
@@ -218,6 +232,59 @@ async function getIdToken(accessToken) {
   const response = await fetch(`https://oauth2.googleapis.com/tokeninfo?access_token=${accessToken}`);
   const data = await response.json();
   return data.id_token;
+}
+
+// Handle OAuth redirect
+async function handleOAuthRedirect(accessToken, code) {
+  try {
+    if (accessToken) {
+      // We have an access token, get user info and ID token
+      const userInfo = await getUserInfo(accessToken);
+      const idToken = await getIdToken(accessToken);
+      
+      // Send to server for verification
+      const serverResponse = await fetch('/api/auth/google', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ idToken })
+      });
+      
+      const result = await serverResponse.json();
+      
+      if (result.success) {
+        showUserInfo(result.user);
+        showNotification('Signed in successfully!', 'success');
+      } else {
+        showNotification('Sign-in failed', 'error');
+        showLoginButton();
+      }
+    } else if (code) {
+      // We have an authorization code, exchange it for tokens
+      const tokenResponse = await fetch('/api/auth/token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ code })
+      });
+      
+      const tokenResult = await tokenResponse.json();
+      
+      if (tokenResult.success) {
+        showUserInfo(tokenResult.user);
+        showNotification('Signed in successfully!', 'success');
+      } else {
+        showNotification('Sign-in failed', 'error');
+        showLoginButton();
+      }
+    }
+  } catch (error) {
+    console.error('OAuth redirect handling failed:', error);
+    showNotification('Sign-in failed', 'error');
+    showLoginButton();
+  }
 }
 
 // Show notification

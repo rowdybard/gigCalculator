@@ -5,6 +5,7 @@ const helmet = require('helmet');
 const session = require('express-session');
 const admin = require('firebase-admin');
 const FirestoreSessionStore = require('./firestore-session-store');
+const fetch = require('node-fetch');
 require('dotenv').config();
 
 const app = express();
@@ -130,6 +131,73 @@ app.post('/api/auth/google', async (req, res) => {
   } catch (error) {
     console.error('Auth error:', error);
     res.status(401).json({ error: 'Authentication failed' });
+  }
+});
+
+// Exchange authorization code for tokens
+app.post('/api/auth/token', async (req, res) => {
+  try {
+    const { code } = req.body;
+    
+    if (!code) {
+      return res.status(400).json({ error: 'No authorization code provided' });
+    }
+
+    // Exchange code for tokens using Google's token endpoint
+    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        code: code,
+        client_id: process.env.GOOGLE_CLIENT_ID,
+        client_secret: process.env.GOOGLE_CLIENT_SECRET,
+        redirect_uri: `${req.protocol}://${req.get('host')}`,
+        grant_type: 'authorization_code'
+      })
+    });
+
+    const tokenData = await tokenResponse.json();
+    
+    if (!tokenData.access_token) {
+      console.error('Token exchange failed:', tokenData);
+      return res.status(400).json({ error: 'Token exchange failed' });
+    }
+
+    // Get user info from Google
+    const userInfoResponse = await fetch(`https://www.googleapis.com/oauth2/v2/userinfo?access_token=${tokenData.access_token}`);
+    const userInfo = await userInfoResponse.json();
+
+    // Create a custom token for Firebase
+    const customToken = await admin.auth().createCustomToken(userInfo.id);
+    
+    // Store user session
+    req.session.userId = userInfo.id;
+    req.session.user = {
+      uid: userInfo.id,
+      email: userInfo.email,
+      name: userInfo.name,
+      picture: userInfo.picture
+    };
+
+    // Save user to Firestore
+    await db.collection('users').doc(userInfo.id).set({
+      uid: userInfo.id,
+      email: userInfo.email,
+      displayName: userInfo.name,
+      photoURL: userInfo.picture,
+      lastSignIn: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: admin.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+
+    res.json({ 
+      success: true, 
+      user: req.session.user 
+    });
+  } catch (error) {
+    console.error('Token exchange error:', error);
+    res.status(401).json({ error: 'Token exchange failed' });
   }
 });
 
