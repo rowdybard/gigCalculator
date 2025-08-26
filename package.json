@@ -2,10 +2,10 @@
   "name": "gig-calculator",
   "version": "1.0.0",
   "description": "Gig Worker Pay Calculator - Powered by Hey Dispatch - Calculate true hourly rates after expenses for Roadie, DoorDash, Uber, and more",
-  "main": "start.js",
+  "main": "server-simple.js",
   "scripts": {
-    "start": "node start.js",
-    "dev": "nodemon server.js",
+    "start": "node server-simple.js",
+    "dev": "nodemon server-simple.js",
     "build": "echo 'No build step required'"
   },
   "keywords": [
@@ -25,9 +25,7 @@
     "express": "^4.18.2",
     "cors": "^2.8.5",
     "helmet": "^7.1.0",
-    "firebase-admin": "^12.0.0",
-    "dotenv": "^16.3.1",
-    "express-session": "^1.17.3"
+    "dotenv": "^16.3.1"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"
