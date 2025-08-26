@@ -21,9 +21,14 @@ const pool = new Pool({
 // Database initialization
 async function initDatabase() {
   try {
+    // Drop and recreate users table to ensure correct schema
+    await pool.query('DROP TABLE IF EXISTS calculations CASCADE');
+    await pool.query('DROP TABLE IF EXISTS user_preferences CASCADE');
+    await pool.query('DROP TABLE IF EXISTS users CASCADE');
+    
     // Create users table with comprehensive fields
     await pool.query(`
-      CREATE TABLE IF NOT EXISTS users (
+      CREATE TABLE users (
         id SERIAL PRIMARY KEY,
         google_id VARCHAR(255) UNIQUE NOT NULL,
         email VARCHAR(255) UNIQUE NOT NULL,
@@ -56,7 +61,7 @@ async function initDatabase() {
 
     // Create calculations table with enhanced tracking
     await pool.query(`
-      CREATE TABLE IF NOT EXISTS calculations (
+      CREATE TABLE calculations (
         id SERIAL PRIMARY KEY,
         user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
         session_id VARCHAR(255),
@@ -96,7 +101,7 @@ async function initDatabase() {
 
     // Create user preferences table
     await pool.query(`
-      CREATE TABLE IF NOT EXISTS user_preferences (
+      CREATE TABLE user_preferences (
         id SERIAL PRIMARY KEY,
         user_id INTEGER REFERENCES users(id) ON DELETE CASCADE UNIQUE,
         default_mpg DECIMAL(10,2) DEFAULT 25.0,
@@ -177,7 +182,7 @@ passport.use(new GoogleStrategy({
     : "/auth/google/callback"
 }, async (accessToken, refreshToken, profile, done) => {
   try {
-    console.log('Google OAuth profile received:', profile.id);
+    console.log('Google OAuth profile received:', profile.id, profile.emails?.[0]?.value);
     
     // Check if user exists
     let userResult = await pool.query(
@@ -238,7 +243,12 @@ passport.use(new GoogleStrategy({
 
     return done(null, user.rows[0]);
   } catch (error) {
-    console.error('Error in Google Strategy:', error);
+    console.error('❌ Error in Google Strategy:', error);
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      code: error.code
+    });
     return done(error, null);
   }
 }));
@@ -250,9 +260,12 @@ passport.serializeUser((user, done) => {
 
 passport.deserializeUser(async (id, done) => {
   try {
+    console.log('Deserializing user ID:', id);
     const result = await pool.query('SELECT * FROM users WHERE id = $1', [id]);
+    console.log('User found:', !!result.rows[0]);
     done(null, result.rows[0] || null);
   } catch (error) {
+    console.error('❌ Error deserializing user:', error);
     done(error, null);
   }
 });
@@ -277,10 +290,35 @@ app.get('/auth/google',
 );
 
 app.get('/auth/google/callback',
-  passport.authenticate('google', { failureRedirect: '/?error=auth_failed' }),
-  (req, res) => {
-    console.log('Google OAuth callback successful for user:', req.user.email);
-    res.redirect('/?auth=success');
+  (req, res, next) => {
+    console.log('🔄 OAuth callback hit with code:', !!req.query.code);
+    console.log('Query params:', Object.keys(req.query));
+    next();
+  },
+  (req, res, next) => {
+    passport.authenticate('google', (err, user, info) => {
+      console.log('🔍 Passport authenticate result:', { err: !!err, user: !!user, info });
+      
+      if (err) {
+        console.error('❌ Passport authentication error:', err);
+        return res.redirect('/?error=auth_failed&details=passport_error');
+      }
+      
+      if (!user) {
+        console.error('❌ No user returned from authentication');
+        return res.redirect('/?error=auth_failed&details=no_user');
+      }
+      
+      req.logIn(user, (err) => {
+        if (err) {
+          console.error('❌ Login error:', err);
+          return res.redirect('/?error=auth_failed&details=login_error');
+        }
+        
+        console.log('✅ Google OAuth successful for user:', user.email);
+        return res.redirect('/?auth=success');
+      });
+    })(req, res, next);
   }
 );
 
@@ -511,14 +549,27 @@ app.get('/api/auth/status', (req, res) => {
 // Health check
 app.get('/api/health', async (req, res) => {
   try {
-    const dbResult = await pool.query('SELECT NOW() as current_time, COUNT(*) as user_count FROM users');
+    // Check basic connection
+    const timeResult = await pool.query('SELECT NOW() as current_time');
+    
+    // Check if tables exist
+    const tablesResult = await pool.query(`
+      SELECT table_name 
+      FROM information_schema.tables 
+      WHERE table_schema = 'public' 
+      AND table_name IN ('users', 'session', 'calculations', 'user_preferences')
+    `);
+    
+    const userCountResult = await pool.query('SELECT COUNT(*) as user_count FROM users');
+    
     res.json({
       status: 'healthy',
       message: 'Gig Calculator API - Production Ready',
       timestamp: new Date().toISOString(),
       database: 'connected',
-      db_time: dbResult.rows[0].current_time,
-      total_users: dbResult.rows[0].user_count,
+      db_time: timeResult.rows[0].current_time,
+      tables: tablesResult.rows.map(r => r.table_name),
+      total_users: userCountResult.rows[0].user_count,
       environment: process.env.NODE_ENV,
       powered_by: 'Hey Dispatch'
     });
