@@ -29,28 +29,33 @@ async function initAuth() {
 // Check current authentication status
 async function checkAuthStatus() {
   try {
+    console.log('🔍 Checking authentication status...');
+    
     const response = await fetch('/api/auth/status', {
       credentials: 'include'
     });
     
+    console.log('Auth status response:', response.status, response.ok);
+    
     if (response.ok) {
       const data = await response.json();
+      console.log('Auth status data:', data);
       
       if (data.authenticated && data.user) {
         currentUser = data.user;
-        console.log('User authenticated:', data.user.email);
+        console.log('✅ User authenticated:', data.user.email);
         await loadUserData();
         showUserInterface();
       } else {
-        console.log('User not authenticated');
+        console.log('❌ User not authenticated');
         showLoginInterface();
       }
     } else {
-      console.log('Auth status check failed');
+      console.log('❌ Auth status check failed:', response.status);
       showLoginInterface();
     }
   } catch (error) {
-    console.error('Error checking auth status:', error);
+    console.error('❌ Error checking auth status:', error);
     showLoginInterface();
   }
 }
@@ -61,16 +66,21 @@ function handleOAuthCallback() {
   const authStatus = urlParams.get('auth');
   const error = urlParams.get('error');
   
+  console.log('🔍 Handling OAuth callback:', { authStatus, error, url: window.location.href });
+  
   if (error) {
     console.error('OAuth error:', error);
     showNotification('Authentication failed. Please try again.', 'error');
     showLoginInterface();
   } else if (authStatus === 'success') {
-    console.log('OAuth success, loading user data...');
+    console.log('✅ OAuth success detected, loading user data...');
     showNotification('Successfully signed in!', 'success');
-    // Reload to get user data
+    // Clean up URL first
     window.history.replaceState({}, document.title, window.location.pathname);
-    checkAuthStatus();
+    // Then check auth status
+    setTimeout(() => {
+      checkAuthStatus();
+    }, 100);
   }
 }
 
