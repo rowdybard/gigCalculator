@@ -329,8 +329,20 @@ app.get('/auth-basic.js', (req, res) => {
 
 
 
-// Handle all other routes
+// Debug route to catch all requests
 app.get('*', (req, res) => {
+  console.log('Catch-all route hit:', req.method, req.url);
+  console.log('Query params:', req.query);
+  console.log('Headers:', req.headers);
+  
+  // If this is an OAuth callback, handle it
+  const { code } = req.query;
+  if (code) {
+    console.log('OAuth callback found in catch-all route!');
+    // Handle OAuth callback here
+    return res.redirect('/?code=' + code);
+  }
+  
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
