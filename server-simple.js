@@ -30,10 +30,10 @@ app.use(cors());
 // Serve static files
 app.use(express.static(path.join(__dirname, './')));
 
-// Serve auth-simple.js with correct MIME type
-app.get('/auth-simple.js', (req, res) => {
+// Serve auth-basic.js with correct MIME type
+app.get('/auth-basic.js', (req, res) => {
   res.setHeader('Content-Type', 'application/javascript');
-  res.sendFile(path.join(__dirname, 'public/auth-simple.js'));
+  res.sendFile(path.join(__dirname, 'public/auth-basic.js'));
 });
 
 // Health check
