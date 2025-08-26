@@ -4,6 +4,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const session = require('express-session');
 const admin = require('firebase-admin');
+const FirestoreSessionStore = require('./firestore-session-store');
 require('dotenv').config();
 
 const app = express();
@@ -48,8 +49,12 @@ app.use(cors());
 // Parse JSON bodies
 app.use(express.json());
 
-// Session configuration
+// Session configuration with Firestore store
 app.use(session({
+  store: new FirestoreSessionStore(db, {
+    collection: 'sessions',
+    ttl: 24 * 60 * 60 * 1000 // 24 hours
+  }),
   secret: process.env.SESSION_SECRET || 'your-secret-key',
   resave: false,
   saveUninitialized: false,
@@ -207,6 +212,12 @@ app.get('/', (req, res) => {
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
+
+// Clean up expired sessions every hour
+const sessionStore = new FirestoreSessionStore(db);
+setInterval(() => {
+  sessionStore.cleanup().catch(console.error);
+}, 60 * 60 * 1000); // Every hour
 
 app.listen(PORT, () => {
   console.log(`🚛 Gig Calculator (Powered by Hey Dispatch) server running on port ${PORT}`);
