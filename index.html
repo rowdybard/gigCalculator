@@ -114,17 +114,17 @@
             </div>
             <div>
               <label class="text-sm text-slate-300 font-medium">Vehicle MPG</label>
-              <input id="mpg" type="number" step="0.1" min="0" class="w-full mt-1 rounded-lg bg-slate-700 ring-1 ring-white/10 p-3 text-lg" value="0" placeholder="0.0" oninput="validateNumber(this, 0)">
+              <input id="mpg" type="number" step="0.1" min="0" class="w-full mt-1 rounded-lg bg-slate-700 ring-1 ring-white/10 p-3 text-lg" value="0" placeholder="0.0" oninput="validateDecimal(this, 0)">
               <p class="text-xs text-slate-500 mt-1">Your vehicle's fuel efficiency</p>
             </div>
             <div>
               <label class="text-sm text-slate-300 font-medium">Wear & Tear ($/mile)</label>
-              <input id="wear" type="number" step="0.01" min="0" class="w-full mt-1 rounded-lg bg-slate-700 ring-1 ring-white/10 p-3 text-lg" value="0.67" placeholder="0.00" oninput="validateNumber(this, 0)">
+              <input id="wear" type="number" step="0.01" min="0" class="w-full mt-1 rounded-lg bg-slate-700 ring-1 ring-white/10 p-3 text-lg" value="0.67" placeholder="0.00" oninput="validateDecimal(this, 0)">
               <p class="text-xs text-slate-500 mt-1">Typical range: $0.60-$0.70/mile</p>
             </div>
             <div>
               <label class="text-sm text-slate-300 font-medium">Estimated Tax Rate (%)</label>
-              <input id="tax" type="number" step="0.1" min="0" max="100" class="w-full mt-1 rounded-lg bg-slate-700 ring-1 ring-white/10 p-3 text-lg" value="0" placeholder="0.0" oninput="validateNumber(this, 0, 100)">
+              <input id="tax" type="number" step="0.1" min="0" max="100" class="w-full mt-1 rounded-lg bg-slate-700 ring-1 ring-white/10 p-3 text-lg" value="0" placeholder="0.0" oninput="validateDecimal(this, 0, 100)">
               <p class="text-xs text-slate-500 mt-1">Self-employment tax estimate</p>
             </div>
           </div>
@@ -290,10 +290,16 @@
       <div class="flex items-center justify-between mb-4">
         <h3 class="text-xl font-semibold text-slate-200 flex items-center">
           <i class="fas fa-history mr-2 text-indigo-400"></i>Saved Calculations
+          <span id="calculationCount" class="ml-2 text-sm bg-slate-700 px-2 py-1 rounded-full hidden"></span>
         </h3>
-        <button id="refreshCalculations" class="px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm font-medium transition-all">
-          <i class="fas fa-sync-alt mr-1"></i>Refresh
-        </button>
+        <div class="flex items-center space-x-2">
+          <button id="toggleViewMode" class="px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm font-medium transition-all hidden">
+            <i class="fas fa-list mr-1"></i>Show All
+          </button>
+          <button id="refreshCalculations" class="px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm font-medium transition-all">
+            <i class="fas fa-sync-alt mr-1"></i>Refresh
+          </button>
+        </div>
       </div>
       
       <div id="savedCalculationsContainer">
@@ -310,6 +316,21 @@
         
         <div id="calculationsList" class="space-y-3 hidden">
           <!-- Calculations will be populated here -->
+        </div>
+        
+        <div id="paginationControls" class="mt-4 flex items-center justify-between hidden">
+          <div class="text-sm text-slate-400">
+            Showing <span id="showingRange"></span> of <span id="totalCalculations"></span> calculations
+          </div>
+          <div class="flex items-center space-x-2">
+            <button id="prevPage" class="px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+              <i class="fas fa-chevron-left mr-1"></i>Previous
+            </button>
+            <span id="pageInfo" class="px-3 py-1 text-sm text-slate-300"></span>
+            <button id="nextPage" class="px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+              Next<i class="fas fa-chevron-right ml-1"></i>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -877,31 +898,52 @@
     }
 
     // Saved Calculations Display
+    let allCalculations = [];
+    let currentPage = 1;
+    let calculationsPerPage = 5;
+    let showAllMode = false;
+
     async function loadSavedCalculations() {
       const calculationsLoading = document.getElementById('calculationsLoading');
       const noCalculations = document.getElementById('noCalculations');
       const calculationsList = document.getElementById('calculationsList');
+      const calculationCount = document.getElementById('calculationCount');
       
       // Show loading
       calculationsLoading.classList.remove('hidden');
       noCalculations.classList.add('hidden');
       calculationsList.classList.add('hidden');
+      document.getElementById('paginationControls').classList.add('hidden');
+      calculationCount.classList.add('hidden');
       
       try {
         let calculations = [];
         
-        // Try to get from database first
+        console.log('🔍 Checking for getUserCalculations function:', typeof getUserCalculations);
+        
+        // Try to get from database first (get all, not just 10)
         if (typeof getUserCalculations === 'function') {
-          calculations = await getUserCalculations(10); // Get last 10
+          console.log('📡 Fetching from database...');
+          calculations = await getUserCalculations(50); // Get more for pagination
+          console.log('📊 Database calculations:', calculations.length);
         }
         
         // Fallback to localStorage if no database or no auth
         if (calculations.length === 0) {
+          console.log('💾 Checking localStorage...');
           const saved = localStorage.getItem('calculations');
           if (saved) {
-            calculations = JSON.parse(saved).slice(-10); // Get last 10
+            const parsed = JSON.parse(saved);
+            calculations = parsed; // Get all from localStorage
+            console.log('💾 LocalStorage calculations:', calculations.length);
+          } else {
+            console.log('💾 No localStorage calculations found');
           }
         }
+        
+        // Store all calculations globally
+        allCalculations = calculations.reverse(); // Most recent first
+        currentPage = 1;
         
         // Hide loading
         calculationsLoading.classList.add('hidden');
@@ -909,7 +951,19 @@
         if (calculations.length === 0) {
           noCalculations.classList.remove('hidden');
         } else {
-          displayCalculations(calculations);
+          // Update count badge
+          calculationCount.textContent = calculations.length;
+          calculationCount.classList.remove('hidden');
+          
+          // Show toggle button if more than 5 calculations
+          const toggleBtn = document.getElementById('toggleViewMode');
+          if (calculations.length > calculationsPerPage) {
+            toggleBtn.classList.remove('hidden');
+          } else {
+            toggleBtn.classList.add('hidden');
+          }
+          
+          displayCalculationsPage();
           calculationsList.classList.remove('hidden');
         }
       } catch (error) {
@@ -919,24 +973,52 @@
       }
     }
 
-    function displayCalculations(calculations) {
+    function displayCalculationsPage() {
       const calculationsList = document.getElementById('calculationsList');
+      const paginationControls = document.getElementById('paginationControls');
+      const toggleBtn = document.getElementById('toggleViewMode');
+      
       calculationsList.innerHTML = '';
       
-      calculations.reverse().forEach((calc, index) => {
+      let calculationsToShow = [];
+      let startIndex, endIndex;
+      
+      if (showAllMode) {
+        calculationsToShow = allCalculations;
+        startIndex = 0;
+        endIndex = allCalculations.length;
+        paginationControls.classList.add('hidden');
+        toggleBtn.innerHTML = '<i class="fas fa-th-list mr-1"></i>Show Less';
+      } else {
+        const totalPages = Math.ceil(allCalculations.length / calculationsPerPage);
+        startIndex = (currentPage - 1) * calculationsPerPage;
+        endIndex = Math.min(startIndex + calculationsPerPage, allCalculations.length);
+        calculationsToShow = allCalculations.slice(startIndex, endIndex);
+        
+        if (allCalculations.length > calculationsPerPage) {
+          paginationControls.classList.remove('hidden');
+          updatePaginationControls(totalPages);
+        }
+        toggleBtn.innerHTML = '<i class="fas fa-list mr-1"></i>Show All';
+      }
+      
+      calculationsToShow.forEach((calc, index) => {
         const calcElement = document.createElement('div');
         calcElement.className = 'bg-slate-700/40 rounded-lg p-4 border border-slate-600/30 hover:bg-slate-700/60 transition-all';
         
         const date = calc.created_at ? new Date(calc.created_at).toLocaleDateString() : 'Recent';
-        const grossHourly = calc.gross_hourly || 0;
-        const netHourly = calc.net_hourly || 0;
-        const score = calc.score || 0;
+        const grossHourly = parseFloat(calc.gross_hourly) || 0;
+        const netHourly = parseFloat(calc.net_hourly) || 0;
+        const score = parseInt(calc.score) || 0;
+        
+        // Calculate actual index in full array
+        const actualIndex = showAllMode ? index : startIndex + index;
         
         calcElement.innerHTML = `
           <div class="flex justify-between items-center">
             <div class="flex items-center space-x-4">
-              <div class="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold">
-                ${index + 1}
+              <div class="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+                #${actualIndex + 1}
               </div>
               <div>
                 <div class="text-slate-200 font-medium">${date}</div>
@@ -949,7 +1031,7 @@
               <div class="text-lg font-bold ${score >= 70 ? 'text-green-400' : score >= 50 ? 'text-yellow-400' : 'text-red-400'}">
                 Score: ${score}
               </div>
-              <button onclick="loadCalculation(${index})" class="text-xs text-indigo-400 hover:text-indigo-300 mt-1">
+              <button onclick="loadCalculation(${actualIndex})" class="text-xs text-indigo-400 hover:text-indigo-300 mt-1">
                 <i class="fas fa-upload mr-1"></i>Load
               </button>
             </div>
@@ -960,7 +1042,43 @@
       });
       
       // Store calculations for loading
-      window.savedCalculationsData = calculations;
+      window.savedCalculationsData = allCalculations;
+    }
+
+    function updatePaginationControls(totalPages) {
+      const showingRange = document.getElementById('showingRange');
+      const totalCalculations = document.getElementById('totalCalculations');
+      const pageInfo = document.getElementById('pageInfo');
+      const prevBtn = document.getElementById('prevPage');
+      const nextBtn = document.getElementById('nextPage');
+      
+      const startIndex = (currentPage - 1) * calculationsPerPage + 1;
+      const endIndex = Math.min(currentPage * calculationsPerPage, allCalculations.length);
+      
+      showingRange.textContent = `${startIndex}-${endIndex}`;
+      totalCalculations.textContent = allCalculations.length;
+      pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+      
+      prevBtn.disabled = currentPage === 1;
+      nextBtn.disabled = currentPage === totalPages;
+    }
+
+    function changePage(direction) {
+      const totalPages = Math.ceil(allCalculations.length / calculationsPerPage);
+      
+      if (direction === 'prev' && currentPage > 1) {
+        currentPage--;
+      } else if (direction === 'next' && currentPage < totalPages) {
+        currentPage++;
+      }
+      
+      displayCalculationsPage();
+    }
+
+    function toggleViewMode() {
+      showAllMode = !showAllMode;
+      currentPage = 1; // Reset to first page when switching modes
+      displayCalculationsPage();
     }
 
     function loadCalculation(index) {
@@ -978,11 +1096,27 @@
     load();
     checkAuthStatus();
     
-    // Set up refresh button and load calculations
+    // Set up event listeners and load calculations
     setTimeout(() => {
       const refreshBtn = document.getElementById('refreshCalculations');
+      const toggleBtn = document.getElementById('toggleViewMode');
+      const prevBtn = document.getElementById('prevPage');
+      const nextBtn = document.getElementById('nextPage');
+      
       if (refreshBtn) {
         refreshBtn.addEventListener('click', loadSavedCalculations);
+      }
+      
+      if (toggleBtn) {
+        toggleBtn.addEventListener('click', toggleViewMode);
+      }
+      
+      if (prevBtn) {
+        prevBtn.addEventListener('click', () => changePage('prev'));
+      }
+      
+      if (nextBtn) {
+        nextBtn.addEventListener('click', () => changePage('next'));
       }
       
       // Load calculations after page is ready
