@@ -28,7 +28,7 @@
       <div class="flex justify-between items-center mb-4">
         <div></div> <!-- Spacer -->
         <div id="auth-section" class="flex items-center space-x-4 relative z-30">
-          <button id="loginBtn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-all relative z-40 cursor-pointer">
+          <button id="loginBtn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-all relative z-40 cursor-pointer" onclick="try{(window.signInWithGoogle||window.Auth?.signIn||(()=>{window.location.href='/auth/google'}))()}catch(e){window.location.href='/auth/google'}">
             <i class="fab fa-google mr-2"></i>Sign in with Google
           </button>
           <div id="userInfo" class="flex items-center space-x-3 hidden">
