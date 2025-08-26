@@ -17,7 +17,7 @@ app.use(helmet({
       fontSrc: ["'self'", "https://cdnjs.cloudflare.com"],
       imgSrc: ["'self'", "data:", "https:"],
       connectSrc: ["'self'", "https://identitytoolkit.googleapis.com", "https://securetoken.googleapis.com"],
-      frameSrc: ["'self'"],
+      frameSrc: ["'self'", "https://gigcalc-715a5.firebaseapp.com", "https://accounts.google.com"],
       objectSrc: ["'none'"],
       upgradeInsecureRequests: [],
     },
