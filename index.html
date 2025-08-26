@@ -277,7 +277,7 @@
           <i class="fas fa-share-alt mr-2"></i>Share to Social Media
         </button>
         <button id="copyScorecard" class="px-6 py-3 bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-500 hover:to-orange-500 text-white font-semibold rounded-lg transition-all">
-          <i class="fas fa-copy mr-2"></i>Copy Image URL
+          <i class="fas fa-copy mr-2"></i>Copy Share URL
         </button>
       </div>
     </div>
@@ -830,77 +830,30 @@
       document.getElementById('scorecardModal').classList.add('hidden');
     }
     
-    // Generate scorecard image URL for social media sharing
-    function generateScorecardImageUrl() {
+    // Generate a shareable scorecard URL with embedded data
+    function generateScorecardUrl() {
       const scoreData = calculateScore();
       const grossHourly = parseFloat($("grossHourly").textContent.replace('$', '').replace('/hr', '')) || 0;
       const netHourly = parseFloat($("realHourly").textContent.replace('$', '').replace('/hr', '')) || 0;
       const netProfit = parseFloat($("netProfit").textContent.replace('$', '')) || 0;
       
-      // Create a data URL for a simple scorecard image
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      canvas.width = 800;
-      canvas.height = 600;
+      // Create a compressed data string
+      const data = {
+        s: scoreData.score,
+        g: scoreData.grade,
+        gh: Math.round(grossHourly * 100) / 100,
+        nh: Math.round(netHourly * 100) / 100,
+        np: Math.round(netProfit * 100) / 100,
+        t: Date.now()
+      };
       
-      // Background gradient
-      const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-      gradient.addColorStop(0, '#1e293b');
-      gradient.addColorStop(1, '#0f172a');
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      
-      // Title
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 48px Arial';
-      ctx.textAlign = 'center';
-      ctx.fillText('Gig Performance Scorecard', canvas.width / 2, 80);
-      
-      // Score circle
-      const centerX = canvas.width / 2;
-      const centerY = 200;
-      const radius = 80;
-      
-      // Score background circle
-      ctx.beginPath();
-      ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
-      ctx.fillStyle = scoreData.score >= 70 ? '#10b981' : scoreData.score >= 50 ? '#f59e0b' : '#ef4444';
-      ctx.fill();
-      
-      // Score text
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 64px Arial';
-      ctx.fillText(scoreData.score.toString(), centerX, centerY + 20);
-      
-      // Grade
-      ctx.font = 'bold 32px Arial';
-      ctx.fillText(scoreData.grade, centerX, centerY + 60);
-      
-      // Stats
-      ctx.fillStyle = '#e2e8f0';
-      ctx.font = '28px Arial';
-      ctx.textAlign = 'left';
-      
-      const statsY = 350;
-      const leftX = 100;
-      const rightX = 500;
-      
-      ctx.fillText(`Gross: $${grossHourly.toFixed(2)}/hr`, leftX, statsY);
-      ctx.fillText(`Net: $${netHourly.toFixed(2)}/hr`, rightX, statsY);
-      ctx.fillText(`Total Profit: $${netProfit.toFixed(2)}`, leftX, statsY + 50);
-      ctx.fillText(`Grade: ${scoreData.grade}`, rightX, statsY + 50);
-      
-      // Footer
-      ctx.fillStyle = '#64748b';
-      ctx.font = '24px Arial';
-      ctx.textAlign = 'center';
-      ctx.fillText('Powered by Hey Dispatch', centerX, 550);
-      
-      return canvas.toDataURL('image/png');
+      // Convert to base64 for short URL
+      const dataString = btoa(JSON.stringify(data));
+      return `${window.location.origin}/?share=${dataString}`;
     }
     
     function shareScorecard() {
-      const imageUrl = generateScorecardImageUrl();
+      const scoreUrl = generateScorecardUrl();
       const scoreData = calculateScore();
       const shareText = `I just scored ${scoreData.score}/100 (Grade: ${scoreData.grade}) on my gig shift! 🚛💪`;
       
@@ -909,20 +862,20 @@
         navigator.share({
           title: 'My Gig Performance Scorecard',
           text: shareText,
-          url: window.location.href
+          url: scoreUrl
         }).catch(err => {
           console.log('Error sharing:', err);
-          fallbackShare(shareText, imageUrl);
+          fallbackShare(shareText, scoreUrl);
         });
       } else {
-        fallbackShare(shareText, imageUrl);
+        fallbackShare(shareText, scoreUrl);
       }
     }
     
-    function fallbackShare(shareText, imageUrl) {
-      // Create social media sharing URLs
+    function fallbackShare(shareText, scoreUrl) {
+      // Create social media sharing URLs with the scorecard URL
       const encodedText = encodeURIComponent(shareText);
-      const encodedUrl = encodeURIComponent(window.location.href);
+      const encodedUrl = encodeURIComponent(scoreUrl);
       
       const shareOptions = [
         {
@@ -953,6 +906,10 @@
       shareModal.innerHTML = `
         <div class="bg-slate-800 rounded-2xl p-6 max-w-md w-full mx-4">
           <h3 class="text-xl font-bold text-white mb-4">Share Your Scorecard</h3>
+          <div class="text-sm text-slate-300 mb-4 p-3 bg-slate-700 rounded-lg">
+            <strong>Sharecard URL:</strong><br>
+            <span class="text-indigo-400 break-all">${scoreUrl}</span>
+          </div>
           <div class="grid grid-cols-2 gap-3">
             ${shareOptions.map(option => `
               <a href="${option.url}" target="_blank" class="flex items-center justify-center space-x-2 p-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-all text-white">
@@ -978,15 +935,20 @@
     }
     
     function copyScorecardImageUrl() {
-      const imageUrl = generateScorecardImageUrl();
-      
-      // Copy image URL to clipboard
-      navigator.clipboard.writeText(imageUrl).then(() => {
-        showNotification('Scorecard image URL copied to clipboard!', 'success');
-      }).catch(err => {
-        console.error('Failed to copy image URL:', err);
-        showNotification('Failed to copy image URL', 'error');
-      });
+      try {
+        const scoreUrl = generateScorecardUrl();
+        
+        // Copy scorecard URL to clipboard
+        navigator.clipboard.writeText(scoreUrl).then(() => {
+          showNotification('Scorecard URL copied to clipboard!', 'success');
+        }).catch(err => {
+          console.error('Failed to copy URL:', err);
+          showNotification('Failed to copy URL', 'error');
+        });
+      } catch (err) {
+        console.error('Failed to generate scorecard URL:', err);
+        showNotification('Failed to generate scorecard URL', 'error');
+      }
     }
 
     // Save current calculation to database
