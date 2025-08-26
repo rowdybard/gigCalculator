@@ -1,0 +1,289 @@
+const express = require('express');
+const path = require('path');
+const cors = require('cors');
+const helmet = require('helmet');
+const { Pool } = require('pg');
+require('dotenv').config();
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// PostgreSQL connection
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+});
+
+// Middleware
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com", "https://cdnjs.cloudflare.com"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdn.tailwindcss.com"],
+      fontSrc: ["'self'", "https://cdnjs.cloudflare.com"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      upgradeInsecureRequests: [],
+    },
+  },
+}));
+
+app.use(cors());
+app.use(express.json());
+app.use(express.static(path.join(__dirname, './')));
+
+// Database initialization
+async function initDatabase() {
+  try {
+    // Create users table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        google_id VARCHAR(255) UNIQUE NOT NULL,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        picture_url TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Create calculations table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS calculations (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        gross_hourly DECIMAL(10,2),
+        net_hourly DECIMAL(10,2),
+        fuel_cost DECIMAL(10,2),
+        wear_tear_cost DECIMAL(10,2),
+        tax_rate DECIMAL(5,2),
+        gross_per_mile DECIMAL(10,2),
+        net_per_mile DECIMAL(10,2),
+        gross_per_mile_all DECIMAL(10,2),
+        net_per_mile_all DECIMAL(10,2),
+        score INTEGER,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    console.log('✅ Database tables initialized');
+  } catch (error) {
+    console.error('❌ Database initialization error:', error);
+  }
+}
+
+// Initialize database on startup
+initDatabase();
+
+// API Routes
+
+// Health check
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    message: 'Gig Calculator API is running',
+    poweredBy: 'Hey Dispatch',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Google OAuth callback
+app.get('/api/auth/google/callback', async (req, res) => {
+  const { code } = req.query;
+  
+  if (!code) {
+    return res.redirect('/?error=no_code');
+  }
+
+  try {
+    // Exchange code for tokens
+    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        code,
+        client_id: process.env.GOOGLE_CLIENT_ID,
+        client_secret: process.env.GOOGLE_CLIENT_SECRET,
+        redirect_uri: `${req.protocol}://${req.get('host')}/api/auth/google/callback`,
+        grant_type: 'authorization_code',
+      }),
+    });
+
+    const tokens = await tokenResponse.json();
+
+    if (tokens.error) {
+      console.error('Token exchange error:', tokens);
+      return res.redirect('/?error=token_exchange_failed');
+    }
+
+    // Get user info from Google
+    const userResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+      headers: {
+        'Authorization': `Bearer ${tokens.access_token}`,
+      },
+    });
+
+    const userData = await userResponse.json();
+
+    // Find or create user in database
+    let user = await pool.query(
+      'SELECT * FROM users WHERE google_id = $1',
+      [userData.id]
+    );
+
+    if (user.rows.length === 0) {
+      // Create new user
+      user = await pool.query(
+        'INSERT INTO users (google_id, email, name, picture_url) VALUES ($1, $2, $3, $4) RETURNING *',
+        [userData.id, userData.email, userData.name, userData.picture]
+      );
+    } else {
+      // Update existing user
+      user = await pool.query(
+        'UPDATE users SET email = $1, name = $2, picture_url = $3, updated_at = CURRENT_TIMESTAMP WHERE google_id = $4 RETURNING *',
+        [userData.email, userData.name, userData.picture, userData.id]
+      );
+    }
+
+    // Create session token (simple JWT-like approach)
+    const sessionToken = Buffer.from(JSON.stringify({
+      userId: user.rows[0].id,
+      email: user.rows[0].email,
+      exp: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 days
+    })).toString('base64');
+
+    // Redirect to app with session token
+    res.redirect(`/?session=${sessionToken}`);
+
+  } catch (error) {
+    console.error('OAuth callback error:', error);
+    res.redirect('/?error=auth_failed');
+  }
+});
+
+// Get current user
+app.get('/api/user', async (req, res) => {
+  try {
+    const sessionToken = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!sessionToken) {
+      return res.status(401).json({ error: 'No session token' });
+    }
+
+    const sessionData = JSON.parse(Buffer.from(sessionToken, 'base64').toString());
+    
+    if (sessionData.exp < Date.now()) {
+      return res.status(401).json({ error: 'Session expired' });
+    }
+
+    const user = await pool.query('SELECT id, email, name, picture_url FROM users WHERE id = $1', [sessionData.userId]);
+    
+    if (user.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json(user.rows[0]);
+  } catch (error) {
+    console.error('Get user error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Save calculation
+app.post('/api/calculations', async (req, res) => {
+  try {
+    const sessionToken = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!sessionToken) {
+      return res.status(401).json({ error: 'No session token' });
+    }
+
+    const sessionData = JSON.parse(Buffer.from(sessionToken, 'base64').toString());
+    
+    if (sessionData.exp < Date.now()) {
+      return res.status(401).json({ error: 'Session expired' });
+    }
+
+    const {
+      gross_hourly,
+      net_hourly,
+      fuel_cost,
+      wear_tear_cost,
+      tax_rate,
+      gross_per_mile,
+      net_per_mile,
+      gross_per_mile_all,
+      net_per_mile_all,
+      score
+    } = req.body;
+
+    const result = await pool.query(
+      `INSERT INTO calculations (
+        user_id, gross_hourly, net_hourly, fuel_cost, wear_tear_cost, 
+        tax_rate, gross_per_mile, net_per_mile, gross_per_mile_all, 
+        net_per_mile_all, score
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
+      [sessionData.userId, gross_hourly, net_hourly, fuel_cost, wear_tear_cost, 
+       tax_rate, gross_per_mile, net_per_mile, gross_per_mile_all, 
+       net_per_mile_all, score]
+    );
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Save calculation error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get user calculations
+app.get('/api/calculations', async (req, res) => {
+  try {
+    const sessionToken = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!sessionToken) {
+      return res.status(401).json({ error: 'No session token' });
+    }
+
+    const sessionData = JSON.parse(Buffer.from(sessionToken, 'base64').toString());
+    
+    if (sessionData.exp < Date.now()) {
+      return res.status(401).json({ error: 'Session expired' });
+    }
+
+    const calculations = await pool.query(
+      'SELECT * FROM calculations WHERE user_id = $1 ORDER BY created_at DESC',
+      [sessionData.userId]
+    );
+
+    res.json(calculations.rows);
+  } catch (error) {
+    console.error('Get calculations error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Serve auth-basic.js with correct MIME type
+app.get('/auth-basic.js', (req, res) => {
+  res.setHeader('Content-Type', 'application/javascript');
+  res.sendFile(path.join(__dirname, 'public/auth-basic.js'));
+});
+
+// Serve the main app
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// Handle all other routes
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.listen(PORT, () => {
+  console.log(`🚛 Gig Calculator running on port ${PORT}`);
+  console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
+});

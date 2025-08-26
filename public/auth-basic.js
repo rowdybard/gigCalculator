@@ -1,9 +1,9 @@
-// Basic Google OAuth Authentication
-console.log('Basic auth script loaded');
+// PostgreSQL-backed Google OAuth Authentication
+console.log('PostgreSQL auth script loaded');
 
 // Google OAuth configuration
 const GOOGLE_CLIENT_ID = '857672033553-l35tnpme67c0vd3526ruedg9sjras5ds.apps.googleusercontent.com';
-const REDIRECT_URI = window.location.origin;
+const REDIRECT_URI = `${window.location.origin}/api/auth/google/callback`;
 
 // Simple sign in function
 function signInWithGoogle() {
@@ -24,6 +24,7 @@ function signInWithGoogle() {
 // Simple sign out function
 function signOut() {
   console.log('Signing out...');
+  localStorage.removeItem('sessionToken');
   localStorage.removeItem('user');
   showLoginButton();
   showNotification('Signed out successfully', 'success');
@@ -31,46 +32,132 @@ function signOut() {
 
 // Check auth status
 function checkAuthStatus() {
-  // Check if we're returning from OAuth
+  // Check if we're returning from OAuth with session token
   const urlParams = new URLSearchParams(window.location.search);
-  const code = urlParams.get('code');
+  const sessionToken = urlParams.get('session');
+  const error = urlParams.get('error');
   
-  if (code) {
-    console.log('OAuth code received, processing...');
-    processOAuthCode(code);
+  if (error) {
+    console.error('Auth error:', error);
+    showNotification('Authentication failed. Please try again.', 'error');
     // Clean up URL
     window.history.replaceState({}, document.title, window.location.pathname);
+    return;
+  }
+  
+  if (sessionToken) {
+    console.log('Session token received, storing...');
+    localStorage.setItem('sessionToken', sessionToken);
+    // Clean up URL
+    window.history.replaceState({}, document.title, window.location.pathname);
+    // Get user info
+    getUserInfo();
   } else {
     // Check if user is already signed in
-    const user = localStorage.getItem('user');
-    if (user) {
-      console.log('User found in localStorage');
-      showUserInfo(JSON.parse(user));
+    const storedToken = localStorage.getItem('sessionToken');
+    if (storedToken) {
+      console.log('Session token found in localStorage');
+      getUserInfo();
     } else {
-      console.log('No user found, showing login');
+      console.log('No session token found, showing login');
       showLoginButton();
     }
   }
 }
 
-// Process OAuth code (simplified - just store user info)
-function processOAuthCode(code) {
-  console.log('Processing OAuth code...');
-  
-  // For simplicity, we'll just create a mock user
-  // In a real app, you'd exchange the code for tokens on the server
-  const mockUser = {
-    email: 'user@example.com',
-    name: 'Signed In User',
-    picture: 'https://via.placeholder.com/40'
-  };
-  
-  // Store user info
-  localStorage.setItem('user', JSON.stringify(mockUser));
-  
-  // Show user info
-  showUserInfo(mockUser);
-  showNotification('Signed in successfully!', 'success');
+// Get user info from server
+async function getUserInfo() {
+  try {
+    const sessionToken = localStorage.getItem('sessionToken');
+    if (!sessionToken) {
+      showLoginButton();
+      return;
+    }
+
+    const response = await fetch('/api/user', {
+      headers: {
+        'Authorization': `Bearer ${sessionToken}`
+      }
+    });
+
+    if (response.ok) {
+      const user = await response.json();
+      console.log('User info received:', user);
+      localStorage.setItem('user', JSON.stringify(user));
+      showUserInfo(user);
+    } else {
+      console.log('Session expired or invalid');
+      localStorage.removeItem('sessionToken');
+      localStorage.removeItem('user');
+      showLoginButton();
+    }
+  } catch (error) {
+    console.error('Get user info error:', error);
+    showLoginButton();
+  }
+}
+
+// Save calculation to database
+async function saveCalculation(calculationData) {
+  try {
+    const sessionToken = localStorage.getItem('sessionToken');
+    if (!sessionToken) {
+      showNotification('Please sign in to save calculations', 'error');
+      return false;
+    }
+
+    const response = await fetch('/api/calculations', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${sessionToken}`
+      },
+      body: JSON.stringify(calculationData)
+    });
+
+    if (response.ok) {
+      const saved = await response.json();
+      console.log('Calculation saved:', saved);
+      showNotification('Calculation saved successfully!', 'success');
+      return true;
+    } else {
+      console.error('Save calculation failed');
+      showNotification('Failed to save calculation', 'error');
+      return false;
+    }
+  } catch (error) {
+    console.error('Save calculation error:', error);
+    showNotification('Failed to save calculation', 'error');
+    return false;
+  }
+}
+
+// Get user calculations from database
+async function getUserCalculations() {
+  try {
+    const sessionToken = localStorage.getItem('sessionToken');
+    if (!sessionToken) {
+      return [];
+    }
+
+    const response = await fetch('/api/calculations', {
+      headers: {
+        'Authorization': `Bearer ${sessionToken}`
+      }
+    });
+
+    if (response.ok) {
+      const calculations = await response.json();
+      console.log('User calculations:', calculations);
+      return calculations;
+    } else {
+      console.error('Get calculations failed');
+      return [];
+    }
+  } catch (error) {
+    console.error('Get calculations error:', error);
+    return [];
+  }
 }
 
 // Show user info
@@ -87,7 +174,7 @@ function showUserInfo(user) {
   
   // Show user info
   if (userInfo && userPicture && userName) {
-    userPicture.src = user.picture || '/default-avatar.png';
+    userPicture.src = user.picture_url || '/default-avatar.png';
     userName.textContent = user.name || 'User';
     userInfo.classList.remove('hidden');
   }
@@ -123,6 +210,9 @@ function showNotification(message, type = 'info') {
 window.signInWithGoogle = signInWithGoogle;
 window.signOut = signOut;
 window.checkAuthStatus = checkAuthStatus;
+window.getUserInfo = getUserInfo;
+window.saveCalculation = saveCalculation;
+window.getUserCalculations = getUserCalculations;
 window.showUserInfo = showUserInfo;
 window.showLoginButton = showLoginButton;
 window.showNotification = showNotification;

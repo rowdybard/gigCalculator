@@ -687,26 +687,45 @@
     }
 
     // Save current calculation
-    function saveCurrentCalculation() {
+    async function saveCurrentCalculation() {
       // Get current calculation data
       const calculationData = {
-        hours: parseFloat($("hours").value) || 0,
-        miles: parseFloat($("miles").value) || 0,
-        gross: parseFloat($("gross").value) || 0,
-        tips: parseFloat($("tips").value) || 0,
-        onTripMiles: parseFloat($("onTripMiles").value) || 0,
-        fees: parseFloat($("fees").value) || 0,
-        gasPrice: parseFloat($("gas").value) || 0,
-        mpg: parseFloat($("mpg").value) || 0,
-        wearTear: parseFloat($("wear").value) || 0,
-        taxRate: parseFloat($("tax").value) || 0,
-        grossHourly: parseFloat($("grossHourly").textContent.replace('$', '').replace('/hr', '')) || 0,
-        realHourly: parseFloat($("realHourly").textContent.replace('$', '').replace('/hr', '')) || 0,
-        netProfit: parseFloat($("netProfit").textContent.replace('$', '')) || 0,
-        timestamp: new Date().toISOString()
+        gross_hourly: parseFloat($("grossHourly").textContent.replace('$', '').replace('/hr', '')) || 0,
+        net_hourly: parseFloat($("realHourly").textContent.replace('$', '').replace('/hr', '')) || 0,
+        fuel_cost: parseFloat($("fuelCost").textContent.replace('$', '')) || 0,
+        wear_tear_cost: parseFloat($("wearTear").value) || 0,
+        tax_rate: parseFloat($("tax").value) || 0,
+        gross_per_mile: parseFloat($("grossPerMile").textContent.replace('$', '').replace('/mile', '')) || 0,
+        net_per_mile: parseFloat($("netPerMile").textContent.replace('$', '').replace('/mile', '')) || 0,
+        gross_per_mile_all: parseFloat($("grossPerMileAll").textContent.replace('$', '').replace('/mile', '')) || 0,
+        net_per_mile_all: parseFloat($("netPerMileAll").textContent.replace('$', '').replace('/mile', '')) || 0,
+        score: calculateScore().score || 0
       };
 
-      saveCalculation(calculationData);
+      // Try to save to database first, fallback to localStorage
+      if (typeof saveCalculation === 'function') {
+        const saved = await saveCalculation(calculationData);
+        if (saved) {
+          console.log('Calculation saved to database');
+        } else {
+          // Fallback to localStorage
+          saveToLocalStorage(calculationData);
+        }
+      } else {
+        // Fallback to localStorage
+        saveToLocalStorage(calculationData);
+      }
+    }
+
+    // Save to localStorage (fallback)
+    function saveToLocalStorage(calculationData) {
+      const savedCalculations = JSON.parse(localStorage.getItem('calculations') || '[]');
+      savedCalculations.push({
+        ...calculationData,
+        timestamp: new Date().toISOString()
+      });
+      localStorage.setItem('calculations', JSON.stringify(savedCalculations));
+      showNotification('Calculation saved locally', 'success');
     }
 
     // Number validation function
