@@ -95,14 +95,19 @@ app.get('/api/config', (req, res) => {
 // Authentication routes
 app.post('/api/auth/google', async (req, res) => {
   try {
+    console.log('Auth request received:', req.body);
     const { idToken } = req.body;
     
     if (!idToken) {
+      console.log('No ID token provided');
       return res.status(400).json({ error: 'No ID token provided' });
     }
 
+    console.log('Verifying ID token...');
     // Verify the ID token
     const decodedToken = await admin.auth().verifyIdToken(idToken);
+    
+    console.log('Token verified, user:', decodedToken.email);
     
     // Store user session
     req.session.userId = decodedToken.uid;
@@ -113,6 +118,7 @@ app.post('/api/auth/google', async (req, res) => {
       picture: decodedToken.picture
     };
 
+    console.log('Session stored, saving to Firestore...');
     // Save user to Firestore
     await db.collection('users').doc(decodedToken.uid).set({
       uid: decodedToken.uid,
@@ -123,6 +129,7 @@ app.post('/api/auth/google', async (req, res) => {
       createdAt: admin.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
 
+    console.log('User saved to Firestore, sending response');
     res.json({ 
       success: true, 
       user: req.session.user 
@@ -145,6 +152,7 @@ app.post('/api/auth/logout', (req, res) => {
 });
 
 app.get('/api/auth/status', (req, res) => {
+  console.log('Auth status check - session user:', req.session.user);
   if (req.session.user) {
     res.json({
       authenticated: true,

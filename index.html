@@ -7,7 +7,6 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
   <link rel="preload" href="https://accounts.google.com/gsi/client" as="script">
-  <script src="/auth.js"></script>
 
   <style>
     .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
@@ -450,8 +449,27 @@
     document.getElementById('copyScorecard').addEventListener('click', copyScorecardLink);
     
     // Auth event listeners
-    document.getElementById('loginBtn').addEventListener('click', signInWithGoogle);
-    document.getElementById('logoutBtn').addEventListener('click', signOut);
+    const loginBtn = document.getElementById('loginBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    
+    console.log('Login button found:', loginBtn);
+    console.log('Logout button found:', logoutBtn);
+    console.log('signInWithGoogle function:', typeof signInWithGoogle);
+    
+    if (loginBtn) {
+      loginBtn.addEventListener('click', () => {
+        console.log('Login button clicked!');
+        if (typeof signInWithGoogle === 'function') {
+          signInWithGoogle();
+        } else {
+          console.error('signInWithGoogle is not a function');
+        }
+      });
+    }
+    
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', signOut);
+    }
 
 
 
@@ -744,5 +762,8 @@
     load();
     checkAuthStatus();
   </script>
+  
+  <!-- Load auth functions after DOM is ready -->
+  <script src="/auth.js"></script>
 </body>
 </html>
