@@ -7,6 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
   <link rel="preload" href="https://accounts.google.com/gsi/client" as="script">
+  <script src="/auth.js"></script>
 
   <style>
     .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
@@ -448,39 +449,24 @@
     document.getElementById('shareScorecard').addEventListener('click', shareScorecard);
     document.getElementById('copyScorecard').addEventListener('click', copyScorecardLink);
     
-    // Auth event listeners - wait for auth functions to be available
-    function setupAuthListeners() {
-      const loginBtn = document.getElementById('loginBtn');
-      const logoutBtn = document.getElementById('logoutBtn');
-      
-      console.log('Login button found:', loginBtn);
-      console.log('Logout button found:', logoutBtn);
-      console.log('signInWithGoogle function:', typeof signInWithGoogle);
-      console.log('signOut function:', typeof signOut);
-      
-      if (loginBtn && typeof signInWithGoogle === 'function') {
-        loginBtn.addEventListener('click', () => {
-          console.log('Login button clicked!');
-          signInWithGoogle();
-        });
-      } else {
-        console.error('Login button or signInWithGoogle function not available');
-      }
-      
-      if (logoutBtn && typeof signOut === 'function') {
-        logoutBtn.addEventListener('click', signOut);
-      } else {
-        console.error('Logout button or signOut function not available');
-      }
+    // Auth event listeners
+    const loginBtn = document.getElementById('loginBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    
+    console.log('Login button found:', loginBtn);
+    console.log('Logout button found:', logoutBtn);
+    console.log('signInWithGoogle function:', typeof signInWithGoogle);
+    console.log('signOut function:', typeof signOut);
+    
+    if (loginBtn) {
+      loginBtn.addEventListener('click', () => {
+        console.log('Login button clicked!');
+        signInWithGoogle();
+      });
     }
     
-    // Try to setup listeners immediately
-    setupAuthListeners();
-    
-    // If functions aren't available yet, retry after a delay
-    if (typeof signInWithGoogle !== 'function' || typeof signOut !== 'function') {
-      setTimeout(setupAuthListeners, 1000);
-      setTimeout(setupAuthListeners, 2000);
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', signOut);
     }
 
 
@@ -774,8 +760,5 @@
     load();
     checkAuthStatus();
   </script>
-  
-  <!-- Load auth functions after DOM is ready -->
-  <script src="/auth.js"></script>
 </body>
 </html>
