@@ -8,6 +8,8 @@ const REDIRECT_URI = window.location.origin;
 // Simple sign in function
 function signInWithGoogle() {
   console.log('Starting Google sign-in...');
+  console.log('REDIRECT_URI:', REDIRECT_URI);
+  console.log('window.location.origin:', window.location.origin);
   
   // Create Google OAuth URL
   const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
@@ -16,6 +18,8 @@ function signInWithGoogle() {
     `response_type=code&` +
     `scope=openid%20email%20profile&` +
     `access_type=offline`;
+  
+  console.log('Full OAuth URL:', authUrl);
   
   // Redirect to Google
   window.location.href = authUrl;
