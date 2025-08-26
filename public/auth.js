@@ -3,20 +3,6 @@
 // Check if user is signed in
 async function checkAuthStatus() {
   try {
-    // Check if we're returning from OAuth (URL has access_token or code)
-    const urlParams = new URLSearchParams(window.location.search);
-    const accessToken = urlParams.get('access_token');
-    const code = urlParams.get('code');
-    
-    if (accessToken || code) {
-      console.log('OAuth redirect detected, processing...');
-      // Handle OAuth redirect
-      await handleOAuthRedirect(accessToken, code);
-      // Clean up URL
-      window.history.replaceState({}, document.title, window.location.pathname);
-      return;
-    }
-    
     const response = await fetch('/api/auth/status');
     const data = await response.json();
     
@@ -33,7 +19,6 @@ async function checkAuthStatus() {
 
 // Sign in with Google
 async function signInWithGoogle() {
-  console.log('signInWithGoogle function called');
   try {
     // Load Google Identity Services
     await loadGoogleIdentity();
@@ -45,7 +30,6 @@ async function signInWithGoogle() {
     const client = google.accounts.oauth2.initTokenClient({
       client_id: config.googleClientId,
       scope: 'openid email profile',
-      redirect_uri: window.location.origin,
       callback: async (response) => {
         if (response.access_token) {
           // Get user info and ID token
@@ -234,58 +218,7 @@ async function getIdToken(accessToken) {
   return data.id_token;
 }
 
-// Handle OAuth redirect
-async function handleOAuthRedirect(accessToken, code) {
-  try {
-    if (accessToken) {
-      // We have an access token, get user info and ID token
-      const userInfo = await getUserInfo(accessToken);
-      const idToken = await getIdToken(accessToken);
-      
-      // Send to server for verification
-      const serverResponse = await fetch('/api/auth/google', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ idToken })
-      });
-      
-      const result = await serverResponse.json();
-      
-      if (result.success) {
-        showUserInfo(result.user);
-        showNotification('Signed in successfully!', 'success');
-      } else {
-        showNotification('Sign-in failed', 'error');
-        showLoginButton();
-      }
-    } else if (code) {
-      // We have an authorization code, exchange it for tokens
-      const tokenResponse = await fetch('/api/auth/token', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ code })
-      });
-      
-      const tokenResult = await tokenResponse.json();
-      
-      if (tokenResult.success) {
-        showUserInfo(tokenResult.user);
-        showNotification('Signed in successfully!', 'success');
-      } else {
-        showNotification('Sign-in failed', 'error');
-        showLoginButton();
-      }
-    }
-  } catch (error) {
-    console.error('OAuth redirect handling failed:', error);
-    showNotification('Sign-in failed', 'error');
-    showLoginButton();
-  }
-}
+
 
 // Show notification
 function showNotification(message, type = 'info') {
