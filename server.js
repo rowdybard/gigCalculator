@@ -164,9 +164,11 @@ app.use(session({
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-    sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax'
+    sameSite: 'lax', // Changed from 'strict' to 'lax' for OAuth redirects
+    domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined
   },
-  name: 'gigcalc.sid'
+  name: 'gigcalc.sid',
+  proxy: process.env.NODE_ENV === 'production' // Trust proxy for HTTPS
 }));
 
 // Passport configuration
@@ -538,6 +540,26 @@ app.delete('/api/calculations/:id', requireAuth, async (req, res) => {
     console.error('Error deleting calculation:', error);
     res.status(500).json({ error: 'Failed to delete calculation' });
   }
+});
+
+// Session test endpoint
+app.get('/api/session-test', (req, res) => {
+  console.log('🧪 Session test:', {
+    sessionID: req.sessionID,
+    sessionData: req.session,
+    cookies: req.headers.cookie
+  });
+  
+  // Set a test value in session
+  if (!req.session.testValue) {
+    req.session.testValue = 'test-' + Date.now();
+  }
+  
+  res.json({
+    sessionID: req.sessionID,
+    testValue: req.session.testValue,
+    sessionKeys: Object.keys(req.session)
+  });
 });
 
 // Authentication status check
