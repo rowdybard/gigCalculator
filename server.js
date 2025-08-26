@@ -329,6 +329,7 @@ app.get('/auth/google/callback',
         // Explicitly set cookie header for debugging
         console.log('🍪 Setting session cookie:', req.sessionID);
         
+        console.log('🔄 Redirecting to /?auth=success');
         return res.redirect('/?auth=success');
       });
     })(req, res, next);
@@ -683,6 +684,10 @@ app.get('/api/health', async (req, res) => {
 
 // Serve main application
 app.get('/', (req, res) => {
+  // Log any query parameters for debugging
+  if (Object.keys(req.query).length > 0) {
+    console.log('🏠 Homepage hit with query params:', req.query);
+  }
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 

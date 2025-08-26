@@ -66,7 +66,13 @@ function handleOAuthCallback() {
   const authStatus = urlParams.get('auth');
   const error = urlParams.get('error');
   
-  console.log('🔍 Handling OAuth callback:', { authStatus, error, url: window.location.href });
+  console.log('🔍 Handling OAuth callback:', { 
+    authStatus, 
+    error, 
+    url: window.location.href,
+    searchParams: window.location.search,
+    allParams: Array.from(urlParams.entries())
+  });
   
   if (error) {
     console.error('OAuth error:', error);
@@ -81,6 +87,10 @@ function handleOAuthCallback() {
     setTimeout(() => {
       checkAuthStatus();
     }, 100);
+  } else {
+    // If no auth parameter, still check auth status in case user is already logged in
+    console.log('🔍 No auth parameter found, checking auth status anyway...');
+    checkAuthStatus();
   }
 }
 
