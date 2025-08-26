@@ -19,6 +19,7 @@ async function checkAuthStatus() {
 
 // Sign in with Google
 async function signInWithGoogle() {
+  console.log('signInWithGoogle function called');
   try {
     // Load Google Identity Services
     await loadGoogleIdentity();

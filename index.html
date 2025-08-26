@@ -450,7 +450,10 @@
     document.getElementById('copyScorecard').addEventListener('click', copyScorecardLink);
     
     // Auth event listeners
-    document.getElementById('loginBtn').addEventListener('click', signInWithGoogle);
+    document.getElementById('loginBtn').addEventListener('click', () => {
+      console.log('Login button clicked!');
+      signInWithGoogle();
+    });
     document.getElementById('logoutBtn').addEventListener('click', signOut);
 
 
