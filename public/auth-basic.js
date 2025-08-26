@@ -3,7 +3,7 @@ console.log('PostgreSQL auth script loaded');
 
 // Google OAuth configuration
 const GOOGLE_CLIENT_ID = '857672033553-l35tnpme67c0vd3526ruedg9sjras5ds.apps.googleusercontent.com';
-const REDIRECT_URI = `${window.location.origin}/api/auth/google/callback`;
+const REDIRECT_URI = window.location.origin;
 
 // Simple sign in function
 function signInWithGoogle() {

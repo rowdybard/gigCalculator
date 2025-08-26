@@ -91,94 +91,102 @@ app.get('/api/health', (req, res) => {
 });
 
 // Google OAuth callback
-app.get('/api/auth/google/callback', async (req, res) => {
+app.get('/', async (req, res) => {
+  // Check if this is an OAuth callback
   const { code } = req.query;
   
-  console.log('OAuth callback received with code:', code ? 'YES' : 'NO');
-  
-  if (!code) {
-    console.error('No code received in OAuth callback');
-    return res.redirect('/?error=no_code');
-  }
-
-  try {
-    console.log('Exchanging code for tokens...');
+  if (code) {
+    console.log('OAuth callback received with code:', code ? 'YES' : 'NO');
     
-    // Exchange code for tokens
-    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: new URLSearchParams({
-        code,
-        client_id: process.env.GOOGLE_CLIENT_ID,
-        client_secret: process.env.GOOGLE_CLIENT_SECRET,
-        redirect_uri: `${req.protocol}://${req.get('host')}/api/auth/google/callback`,
-        grant_type: 'authorization_code',
-      }),
-    });
-
-    const tokens = await tokenResponse.json();
-    console.log('Token response received:', tokens.error ? 'ERROR' : 'SUCCESS');
-
-    if (tokens.error) {
-      console.error('Token exchange error:', tokens);
-      return res.redirect('/?error=token_exchange_failed');
+    if (!code) {
+      console.error('No code received in OAuth callback');
+      return res.redirect('/?error=no_code');
     }
 
-    console.log('Getting user info from Google...');
-    
-    // Get user info from Google
-    const userResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
-      headers: {
-        'Authorization': `Bearer ${tokens.access_token}`,
-      },
-    });
+    try {
+      console.log('Exchanging code for tokens...');
+      
+      // Exchange code for tokens
+      const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          code,
+          client_id: process.env.GOOGLE_CLIENT_ID,
+          client_secret: process.env.GOOGLE_CLIENT_SECRET,
+          redirect_uri: `${req.protocol}://${req.get('host')}`,
+          grant_type: 'authorization_code',
+        }),
+      });
 
-    const userData = await userResponse.json();
-    console.log('User data received:', userData.email);
+      const tokens = await tokenResponse.json();
+      console.log('Token response received:', tokens.error ? 'ERROR' : 'SUCCESS');
 
-    // Find or create user in database
-    let user = await pool.query(
-      'SELECT * FROM users WHERE google_id = $1',
-      [userData.id]
-    );
+      if (tokens.error) {
+        console.error('Token exchange error:', tokens);
+        return res.redirect('/?error=token_exchange_failed');
+      }
 
-    if (user.rows.length === 0) {
-      console.log('Creating new user...');
-      // Create new user
-      user = await pool.query(
-        'INSERT INTO users (google_id, email, name, picture_url) VALUES ($1, $2, $3, $4) RETURNING *',
-        [userData.id, userData.email, userData.name, userData.picture]
+      console.log('Getting user info from Google...');
+      
+      // Get user info from Google
+      const userResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+        headers: {
+          'Authorization': `Bearer ${tokens.access_token}`,
+        },
+      });
+
+      const userData = await userResponse.json();
+      console.log('User data received:', userData.email);
+
+      // Find or create user in database
+      let user = await pool.query(
+        'SELECT * FROM users WHERE google_id = $1',
+        [userData.id]
       );
-    } else {
-      console.log('Updating existing user...');
-      // Update existing user
-      user = await pool.query(
-        'UPDATE users SET email = $1, name = $2, picture_url = $3, updated_at = CURRENT_TIMESTAMP WHERE google_id = $4 RETURNING *',
-        [userData.email, userData.name, userData.picture, userData.id]
-      );
+
+      if (user.rows.length === 0) {
+        console.log('Creating new user...');
+        // Create new user
+        user = await pool.query(
+          'INSERT INTO users (google_id, email, name, picture_url) VALUES ($1, $2, $3, $4) RETURNING *',
+          [userData.id, userData.email, userData.name, userData.picture]
+        );
+      } else {
+        console.log('Updating existing user...');
+        // Update existing user
+        user = await pool.query(
+          'UPDATE users SET email = $1, name = $2, picture_url = $3, updated_at = CURRENT_TIMESTAMP WHERE google_id = $4 RETURNING *',
+          [userData.email, userData.name, userData.picture, userData.id]
+        );
+      }
+
+      // Create session token (simple JWT-like approach)
+      const sessionToken = Buffer.from(JSON.stringify({
+        userId: user.rows[0].id,
+        email: user.rows[0].email,
+        exp: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 days
+      })).toString('base64');
+
+      console.log('Session token created, redirecting to app...');
+      console.log('Redirect URL:', `/?session=${sessionToken}`);
+
+      // Redirect to app with session token
+      return res.redirect(`/?session=${sessionToken}`);
+
+    } catch (error) {
+      console.error('OAuth callback error:', error);
+      return res.redirect('/?error=auth_failed');
     }
-
-    // Create session token (simple JWT-like approach)
-    const sessionToken = Buffer.from(JSON.stringify({
-      userId: user.rows[0].id,
-      email: user.rows[0].email,
-      exp: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 days
-    })).toString('base64');
-
-    console.log('Session token created, redirecting to app...');
-    console.log('Redirect URL:', `/?session=${sessionToken}`);
-
-    // Redirect to app with session token
-    res.redirect(`/?session=${sessionToken}`);
-
-  } catch (error) {
-    console.error('OAuth callback error:', error);
-    res.redirect('/?error=auth_failed');
   }
+
+  // If no OAuth code, serve the main app
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
+
+
 
 // Get current user
 app.get('/api/user', async (req, res) => {
@@ -287,10 +295,7 @@ app.get('/auth-basic.js', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/auth-basic.js'));
 });
 
-// Serve the main app
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
+
 
 // Handle all other routes
 app.get('*', (req, res) => {
